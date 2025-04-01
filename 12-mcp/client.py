@@ -1,5 +1,8 @@
 import asyncio
+import os
 from contextlib import AsyncExitStack
+
+from openai import OpenAI
 
 
 class MCPClient:
