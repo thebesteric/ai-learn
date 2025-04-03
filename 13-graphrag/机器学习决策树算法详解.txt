@@ -1,0 +1,1984 @@
+Lesson 8.1 决策树的核心思想与建模流程
+从本节课开始，我们将介绍经典机器学习领域中最重要的一类有监督学习算法——树
+模型（决策树）。
+可此前的聚类算法类似，树模型也同样不是一个模型，而是一类模型的概称。树模型
+不仅运算效率高、模型判别能力强、而且原理简单过程清晰、可解释性强，是机器学习领
+域内为数不多的“白箱模型”。并且就树模型本身的功能来说，除了能够同时进行分类和回
+归预测外，还能够产出包括特征重要性、连续变量分箱指标等重要附加结论，而在集成学
+习中，最为常用的基础分类器也正是树模型。正是这些优势，使得树模型成为目前机器学
+习领域最为重要的模型之一。
+一、借助逻辑回归构建决策树
+那到底什么是树模型？接下来我们简单介绍树模型建模的基本思想 。
+尽管树模型作为经典模型，发展至今已是算法数量众多、流派众多，但大多数树模型
+的基本思想其实是相通的，我们可以用一句话来解释树模型的模型形态和建模目标，那就
+是：挖掘有效分类规则并以树状形式呈现。接下来我们就以一个简单实例进行说明，我们
+借助此前所学的基本建模知识，尝试复现决策树的基本分类思想。
+In [1]:
+# 科学计算模块
+import numpy as np
+import pandas as pd
+# 绘图模块
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+# 自定义模块
+from ML_basic_function import *
+# Scikit-Learn相关模块
+# 评估器类
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import GridSearchCV
+# 实用函数
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+# 数据准备
+from sklearn.datasets import load_iris
+在Lesson 6.5节中，我们曾围绕鸢尾花数据集构建了多分类逻辑回归模型并且采用网
+格搜索对其进行最优超参数搜索，其基本过程如下：
+In [2]:
+# 数据准备
+X, y = load_iris(return_X_y=True)
+
+In [3]:
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=24)
+# 模型训练
+# 实例化模型
+clf = LogisticRegression(max_iter=int(1e6), solver='saga')
+# 构建参数空间
+param_grid_simple = {'penalty': ['l1', 'l2'],
+'C': [1, 0.5, 0.1, 0.05, 0.01]}
+# 构建网格搜索评估器
+search = GridSearchCV(estimator=clf,
+param_grid=param_grid_simple)
+# 模型训练
+search.fit(X_train, y_train)
+Out[3]:
+GridSearchCV(estimator=LogisticRegression(max_iter=1000000, solver='saga'),
+param_grid={'C': [1, 0.5, 0.1, 0.05, 0.01],
+'penalty': ['l1', 'l2']})
+In [4]:
+Out[4]:
+In [5]:
+Out[5]:
+search.best_params_
+{'C': 1, 'penalty': 'l1'}
+search.best_estimator_.coef_
+array([[ 0.
+, 0.
+[ 0.
+, 0.
+, -3.47337669, 0.
+, 0.
+, 0.
+],
+],
+[-0.55511761, -0.34237661, 3.03227709, 4.12148646]])
+In [6]:
+Out[6]:
+search.best_estimator_.intercept_
+array([ 11.85884734, 2.65291107, -14.51175841])
+我们发现，在参数组取值为{'C': 1, 'penalty': 'l1'}的情况下，三个逻辑回归方程中，
+第一个方程只包含一个系数，也就是说明第一个方程实际上只用到了原数据集的一个特
+征，第二个方程自变量系数均为0、基本属于无用方程，而只有第三个方程自变量系数都
+不是0、看起来比较正常“正常”。我们知道，对于多分类问题，逻辑回归所构建的模型方程
+实际上是每个方程对应预测一个类别，而由于总共只有三个类别，因此是允许存在一个类
+别的预测方程失效的，只要剩下的两个类别能够各自完成对应类别的预测，则剩下的样本
+就属于第三类。此处我们需要重点关注的是第一个方程，该方程只有一个非零系数，其背
+后含义是模型只借助特征矩阵中的第三个特征，就很好的将第一类鸢尾花和其他鸢尾花区
+分开了。
+In [7]:
+In [8]:
+我们进一步观察数据和第三个特征对于第一个类别的分类结果：
+iris = load_iris(as_frame=True)
+iris.data
+
+Out[8]:
+0
+1
+2
+3
+4
+...
+145
+146
+147
+148
+149
+sepal length (cm) sepal width (cm) petal length (cm) petal width (cm)
+5.1
+3.5
+4.9
+4.7
+4.6
+5.0
+...
+6.7
+6.3
+6.5
+6.2
+5.9
+150 rows × 4 columns
+In [9]:
+Out[9]:
+t = np.array(iris.target)
+t[50:]
+array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
+In [10]:
+# 将2、3类划归为一类
+t[50:] = 1
+t
+Out[10]:
+array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+In [11]:
+In [12]:
+Out[12]:
+# 此处提取第3、4个特征放置二维空间进行观察，用第三个特征和其他特征组合也是类似
+d = np.array(iris.data.iloc[:, 2: 4])
+plt.scatter(d[:, 0], d[:, 1], c=t)
+plt.plot(np.array([2.5]*25), np.arange(0, 2.5, 0.1), 'r--')
+[<matplotlib.lines.Line2D at 0x7ffb7881bd30>]
+3.0
+3.2
+3.1
+3.6
+...
+3.0
+2.5
+3.0
+3.4
+3.0
+1.4
+1.4
+1.3
+1.5
+1.4
+...
+5.2
+5.0
+5.2
+5.4
+5.1
+0.2
+0.2
+0.2
+0.2
+0.2
+...
+2.3
+1.9
+2.0
+2.3
+1.8
+
+我们发现，确实可以通过第三个特征（横坐标）很好的区分第一类（紫色点簇）和其
+他两类（黄色点簇），也就是说，从分类结果来看，我们能够简单通过一个分类规则来区
+分第一类鸢尾花和其他两类，例如从上图可以看出，我们可以以petal length (cm) <=
+2.5作为分类条件，当分类条件满足时，鸢尾花属于第一类，否则就属于第二、三类。至
+此我们集完成了对上述数据集的初步分类，基本分类情况可以通过下图来进行表示：
+1
+当然围绕上述未分类的二、三类鸢尾花数据，我们能否进一步找到类似刚才的分类规
+则对其进行有效分类呢？当然此处由于我们希望分类规则能够尽可能简洁，我们力求找出
+根据某一个特征的取值划分就能对数据集进行有效分类的方法，这时我们可以考虑先利用
+逻辑回归的l1正则化挑选出对二、三类分类最有分类效力的特征（也就是最重要的特
+征），然后根据只有一个特征系数不为0的带l1正则化的逻辑回归建模结果、找到决策边
+界，而该决策边界就是依据该单独特征划分Iris二、三类子数据的最佳方法。我们可以通
+过下述代码实现：
+In [13]:
+# 提取待分类的子数据集
+X = np.array(iris.data)[t == 1]
+y = np.array(iris.target)[t == 1]
+接下来，我们构建一个包含l1正则化的逻辑回归模型，并通过不断调整C的取值、通过观
+察参数系数变化情况来挑选最重要的特征：
+In [60]:
+In [61]:
+C_l = np.linspace(1, 0.1, 100)
+coef_l = []
+for C in C_l:
+clf = LogisticRegression(penalty='l1', C=C, max_iter=int(1e6), solver='saga'
+coef_l.append(clf.coef_.flatten())
+In [68]:
+ax = plt.gca()
+ax.plot(C_l, coef_l)
+ax.set_xlim(ax.get_xlim()[::-1])
+plt.xlabel('C')
+plt.ylabel('weights')
+Out[68]:
+Text(0, 0.5, 'weights')
+
+In [67]:
+coef_l
+
+Out[67]:
+[array([-1.12493251, -0.96058774, 3.23208646, 4.18486998]),
+array([-1.10210628, -0.91621566, 3.23983307, 4.15696154]),
+array([-1.09239629, -0.89555328, 3.23399288, 4.13377003]),
+array([-1.08811789, -0.88498435, 3.22207551, 4.11256892]),
+array([-1.06705294, -0.84236856, 3.2289702 , 4.08417288]),
+array([-1.05818676, -0.82271916, 3.22212123, 4.06049626]),
+array([-1.04514314, -0.79483425, 3.22012176, 4.034832 ]),
+array([-1.03859953, -0.77953758, 3.21025372, 4.01174608]),
+array([-1.02237904, -0.74473771, 3.21227469, 3.98396209]),
+array([-1.01620836, -0.73001684, 3.20160007, 3.96062442]),
+array([-0.99903143, -0.69243737, 3.20521982, 3.9315887 ]),
+array([-0.98882191, -0.66904752, 3.19966674, 3.90573051]),
+array([-0.97415883, -0.63587402, 3.2003062 , 3.87718618]),
+array([-0.96452518, -0.61330431, 3.19380232, 3.8510462 ]),
+array([-0.95257941, -0.58551283, 3.19060737, 3.8232743 ]),
+array([-0.9405302 , -0.55717711, 3.18755498, 3.79513594]),
+array([-0.92797551, -0.52743767, 3.18526488, 3.76634082]),
+array([-0.92072072, -0.50938749, 3.17475278, 3.74036246]),
+array([-0.90510269, -0.47211112, 3.17719028, 3.70899839]),
+array([-0.89009202, -0.43569901, 3.1788934 , 3.67756566]),
+array([-0.87766924, -0.4050523 , 3.17640578, 3.64738615]),
+array([-0.87286899, -0.39228757, 3.16090415, 3.62179933]),
+array([-0.85425355, -0.34619248, 3.16885758, 3.58676224]),
+array([-0.84887206, -0.33207553, 3.15364443, 3.56032998]),
+array([-0.83147761, -0.28802875, 3.15964514, 3.52515956]),
+array([-0.81352053, -0.24176251, 3.16723112, 3.4889317 ]),
+array([-0.80378813, -0.21608039, 3.15931029, 3.45833305]),
+array([-0.7917758 , -0.1843569 , 3.15554737, 3.42568574]),
+array([-0.7759623 , -0.14232637, 3.15919161, 3.38962502]),
+array([-0.76332702, -0.10825391, 3.15647641, 3.35556836]),
+array([-0.74997069, -0.07184156, 3.15520495, 3.32047552]),
+array([-0.73849732, -0.04031354, 3.14976963, 3.28653383]),
+array([-0.72392909, 0.
+, 3.15076775, 3.24952256]),
+array([-0.72367263, 0.
+array([-0.71773131, 0.
+array([-0.72374493, 0.
+array([-0.7173857 , 0.
+array([-0.70523493, 0.
+array([-0.69782327, 0.
+array([-0.69307433, 0.
+array([-0.65156996, 0.
+array([-0.61274879, 0.
+array([-0.58509755, 0.
+, 3.12039086, 3.22470745]),
+, 3.09818066, 3.19766659]),
+, 3.05891014, 3.1747754 ]),
+, 3.03697755, 3.14715043]),
+, 3.02056866, 3.11785887]),
+, 2.99732931, 3.0900815 ]),
+, 2.97080741, 3.06291264]),
+, 2.97634178, 3.02961721]),
+, 2.97513264, 3.00012166]),
+, 2.96319451, 2.97216583]),
+array([-6.00820243e-01, -3.14038921e-06, 2.91819194e+00, 2.94447850e+00]),
+array([-0.54776078, 0.
+, 2.92305106, 2.91616177]),
+array([-0.49669547, 0.
+array([-0.46034651, 0.
+array([-0.43924183, 0.
+array([-0.42114809, 0.
+array([-0.37710231, 0.
+array([-0.36078815, 0.
+array([-0.32730807, 0.
+array([-0.29040147, 0.
+array([-0.26100188, 0.
+array([-0.23403905, 0.
+array([-0.19633863, 0.
+array([-0.17791327, 0.
+array([-0.12625897, 0.
+array([-0.09535538, 0.
+array([-0.05649025, 0.
+, 2.92482248, 2.88916594]),
+, 2.91500936, 2.8615579 ]),
+, 2.89357789, 2.8326846 ]),
+, 2.86936609, 2.80318528]),
+, 2.86234066, 2.77473542]),
+, 2.83524682, 2.74417042]),
+, 2.81919184, 2.7140471 ]),
+, 2.80460709, 2.68351837]),
+, 2.78395265, 2.6519696 ]),
+, 2.76072855, 2.61970054]),
+, 2.74382518, 2.58723019]),
+, 2.71294983, 2.55340083]),
+, 2.70333197, 2.51992837]),
+, 2.67864753, 2.48510602]),
+, 2.65815739, 2.44967008]),
+
+array([-0.01584183, 0.
+array([0.
+, 0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+array([0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 0.
+, 2.63763392, 2.41346342]),
+, 2.5995733 , 2.37634385]),
+, 2.90224674, 2.23453556]),
+, 2.90064745, 2.1756571 ]),
+, 2.88959628, 2.11967691]),
+, 2.8984936 , 2.05314704]),
+, 2.89326238, 1.99161195]),
+, 2.89341202, 1.92595881]),
+, 2.89113194, 1.85983192]),
+, 2.88973273, 1.79155147]),
+, 2.8825456 , 1.72445091]),
+, 2.88019419, 1.65301627]),
+, 2.88195891, 1.57737666]),
+, 2.88257639, 1.50019671]),
+, 2.87738246, 1.42399342]),
+, 2.87838348, 1.34196882]),
+, 2.87819075, 1.25807283]),
+, 2.87837266, 1.17126788]),
+, 2.87954995, 1.08097403]),
+, 2.87461386, 0.99136144]),
+, 2.87753456, 0.8936161 ]),
+, 2.87862803, 0.79343685]),
+, 2.87693487, 0.69125766]),
+, 2.88278875, 0.57993285]),
+, 2.88375547, 0.4673023 ]),
+, 2.8905426 , 0.34569528]),
+, 2.89382002, 0.22104421]),
+, 2.89895922, 0.08901774]),
+]),
+, 2.84407415, 0.
+, 2.77380838, 0.
+, 2.69757572, 0.
+, 2.62431686, 0.
+, 2.54003727, 0.
+, 2.45326688, 0.
+, 2.3624031, 0.
+, 2.26654779, 0.
+, 2.16159776, 0.
+, 2.05106895, 0.
+, 1.93251455, 0.
+, 1.80075548, 0.
+]),
+]),
+]),
+]),
+]),
+]),
+]),
+]),
+]),
+]),
+])]
+不难看出，在对鸢尾花数据集的二、三分类的子数据集进行分类时，仍然还是第三个特征
+会相对重要，因此我们根据上述结果，构建一个正则化项为l1、C取值为0.2的逻辑回归模
+型进行训练，此时由于其他三个特征的参数都被归零，因此该模型训练过程实际上就相当
+于带入第三个特征进行建模：
+In [69]:
+In [71]:
+Out[71]:
+In [72]:
+Out[72]:
+clf = LogisticRegression(penalty='l1', C=0.2, max_iter=int(1e6), solver='saga').
+clf.coef_, clf.intercept_
+(array([[0.
+, 0.
+array([-13.88186328]))
+clf.score(X, y)
+0.93
+, 2.84518611, 0.
+]]),
+
+此时模型准确率为93%，同样，如果构建一个只包含第三、四个特征的特征空间，此时上
+述逻辑回归建模结果的决策边界为x=b，其中b的取值如下：
+In [75]:
+Out[75]:
+b = 13.88186328 / 2.84518611
+b
+4.87907038179657
+我们可以通过可视化的方法观察此时特征空间中样本分布情况，以及x=b的决策边界的分
+类效果：
+In [84]:
+plt.plot(X[:, 2][y==1], X[:, 3][y==1], 'ro')
+plt.plot(X[:, 2][y==2], X[:, 3][y==2], 'bo')
+plt.plot(np.array([b]*20), np.arange(0.5, 2.5, 0.1), 'r--')
+Out[84]:
+[<matplotlib.lines.Line2D at 0x7ffb992d39a0>]
+In [80]:
+In [79]:
+Out[79]:
+当然，我们也可以简单验算下x=b的决策边界是否是模型真实的分类边界：
+y_pred = clf.predict(X)
+plt.scatter(X[:, 2], X[:, 3], c=y_pred)
+plt.plot(np.array([b]*20), np.arange(0.5, 2.5, 0.1), 'r--')
+[<matplotlib.lines.Line2D at 0x7ffbab00c4c0>]
+
+注意，在确定第一个分类条件时我们没有直接根据逻辑回归的线性方程计算
+决策边界的主要原因是彼时逻辑回归方程是在mvm分类规则下的三个分类
+方程，其中每个方程其实都会一定程度上受到其他方程影响，导致决策边界
+无法直接通过方程系数进行计算。
+尽管x=b分类边界的准确率不足100%，但其仍然不失为一个不错的分类规则，即分类条
+件为petal length (cm) <= 4.879，当分类条件满足时，鸢尾花属于第二类、不满足时鸢
+尾花属于第三类，根据此分类条件进行的分类准确率为93%。我们可以将围绕鸢尾花子数
+据集进行二、三类的分类过程进行如下方式表示：
+1
+至此，我们就根据两个简单的分类规则，对鸢尾花数据集进行了有效划分，此时整体准确
+率为：
+In [89]:
+Out[89]:
+1-(y != y_pred).sum() / 150
+0.9533333333333334
+决策树简单构建
+而上述整个过程，我们是通过带正则化项的逻辑回归模型挖掘出的两个分类规则，并
+且这两个分类规则呈现递进的关系，也就是一个分类规则是在另一个分类规则的分类结果
+下继续进行分类，最终这两个分类规则和对应划分出来的数据集呈现出树状，而带有不同
+层次分类规则的模型，其实就是决策树模型，也就是说通过上面一系列的操作，我们就已
+经成功构建了一个决策树模型。
+决策树的分类过程
+对于上述已经构建好的一个决策树来说，当对新数据进行判别时，任意进来一条数据
+我们都可以自上而下进行分类，先根据petal length (cm) <= 2.5判断是否属于第一类，
+如果不满足条件则不属于第一类，此时进一步考虑petal length (cm) <= 4.879是否满足
+条件，并据此判断是属于第二类还是第三类。
+当然，目前主流的决策树并不是依据逻辑回归来寻找分类规则，但上述构建决策树模
+型的一般过程和核心思想和目前主流的决策树模型并无二致，因此我们可以围绕上述过程
+进行进一步总结：
+决策树模型本质
+当决策树模型构建好了之后，实际上一个决策树就是一系列分类规则的叠加，换而言
+之，决策树模型的构建从本质上来看就是在挖掘有效的分类规则，然后以树的形式来进行
+呈现。
+决策树的树生长过程
+
+在整个树的构建过程中，我们实际上是分层来对数据集进行划分的，每当定下一个分
+类规则后，我们就可以根据是否满足分类规则来对数据集进行划分，而后续的分类规则的
+挖掘则进一步根据上一层划分出来的子数据集的情况来定，逐层划分数据集、逐数据集寻
+找分类规则再划分数据集，实际上就就是树模型的生长过程，并且不难看出，这个过程实
+际上也是一个迭代计算过程（上一层的数据集决定有效规律的挖掘、而有效规律的挖
+掘）。而停止生长的条件，我们也可以根据“继续迭代对结果没有显著影响”这个一般思路
+来构建。
+树模型的基本结构
+当然，在已经构建了决策树之后，我们也能够对一个树模型的内部结构来进行说明。
+对上述决策树来说，我们可以将其看成是点（数据集）和线构成的一个图结构（准确来说
+应该是一种有向无环图），而对于任何一个图结构，我们都能够通过点和线来构建对其的
+基本认知，对于决策树来说，我们主要将借助边的方向来定义不同类型点，首先我们知道
+如果一条边从A点引向B点，则我们这条边对于A点来说是出边、对于B点来说是入边，A
+节点是B节点的父节点，据此我们可以将决策树中所有的点进行如下类别划分：
+(1)根节点（root node）：没有入边，但有零条或者多条出边的点；
+(2)内部点（internal node）：只有一条入边并且有两条或多条出边的点；
+(3)叶节点（leaf node）：只有入边但没有出边的点；
+因此，我们知道在一次次划分数据集的过程中，原始的完整数据集对应着决策树的根
+节点，而根结点划分出的子数据集就构成了决策树中的内部节点，同时迭代停止的时候所
+对应的数据集，其实就是决策树中的叶节点。并且在上述二叉树（每一层只有两个分支）
+中，一个父节点对应两个子节点。并且根据上述决策树的建模过程不难理解，其实每个数
+据集都是由一系列分类规则最终划分出来的，我们也可以理解成每个节点其实都对应着一
+系列分类规则，例如上述E节点实际上就是petal length (cm) <= 2.5和petal length
+(cm) <= 4.879同时为False时划分出来的数据集。
+在了解决策树的一般建模过程和模型本质后，接下来我们来简单说明一下目前树模型
+的主流派系，然后详细讨论目前最通用的机器学习流派的决策树模型的建模过程。
+二、决策树的分类与流派
+正如此前所说，树模型并不是一个模型，而是一类模型。需要知道的是，尽管树模型
+的核心思想都是源于一种名为贪心算法的局部最优求解算法，但时至今日，树模型已经有
+数十种之多，并且划分为多个流派。目前主流的机器学习算法类别可划分如下：
+ID3(Iterative Dichotomiser 3) 、C4.5、C5.0决策树
+是最为经典的决策树算法、同时也是真正将树模型发扬光大的一派算法。最早的ID3
+决策树由Ross Quinlan在1975年（博士毕业论文中）提出，至此也奠定了现在决策树算
+法的基本框架——确定分类规则判别指标、寻找能够最快速降低信息熵的方式进行数据集
+划分（分类规则提取），不断迭代直至收敛；而C4.5则是ID3的后继者，C4.5在ID3的基
+础上补充了一系列基础概念、同时也优化了决策树的算法流程，一方面使得现在的树模型
+
+能够处理连续变量（此前的ID3只能处理分类变量），同时也能够一定程度提高树模型的
+生长速度，而C4.5也是目前最为通用的决策树模型的一般框架，后续尽管有其他的决策树
+模型诞生，但大都是在C4.5的基本流程上进行略微调整或者指标修改，甚至在C4.5还被
+IEEE评为10大数据挖掘算法之首，由此可见C4.5算法的巨大影响力。此外，由于C4.5开源
+时间较早，这也使得在过去的很长一段时间内，C4.5都是最通用的决策树算法。当然在此
+后，Ross Quinlan又公布了C5.0算法，进一步优化了运行效率和预测流程，通过一系列数
+据结构的调整使得其能够更加高效的利用内存、并提高执行速度。当然，由于C5.0在很长
+的一段时间是作为收费软件存在、并且多集成与像SAS软件中，因此并未被最广泛的应用
+于各领域。
+此外，值得一提的是，由于Ross Quinlan拥有非常深厚的数学背景，因此在设计决策
+树算法的时候，尽管决策树是一种非参数方法（无需提前进行数据训练的假设检验），但
+在实际执行决策树剪枝（一种防止过拟合的手段）时却需要用到非常多统计学方法，在实
+际构建模型时也无需划分训练集和测试集，因此C4.5其实更像是一种统计学算法，而非机
+器学习算法。
+需要知道的是，C4.5在树的生长上还是更像机器学习算法，而这种半“统计
+学”半“机器学习”的状态也是该算法存在争议的地方。
+CART决策树
+CART全称为Classification and Regression Trees，即分类与回归决策树，同时也被
+称为C&RT算法，在1984年由Breiman、Friedman、Olshen和Stone四人共同提出。
+CART树和C4.5决策树的构造过程非常类似，但拓展了回归类问题的计算流程（此前C4.5
+只能解决分类问题），并且允许采用更丰富的评估指标来指导建模流程，并且，最关键的
+是，CART算法其实是一个非常典型的机器学习算法，在早期CART树的训练过程中，就是
+通过划分训练集和验证集（或者测试集）来验证模型结果、并进一步据此来调整模型结
+构，当然，除此以外，CART树还能够用一套流程同时处理离散变量和连续变量、能够同
+时处理分类问题和回归问题，这些都符合一个机器学习领域要求算法有更普适的功能和更
+强的鲁棒性的要求，这也是为何近几年CART树会更加流行的主要原因。当然，在skelarn
+中，决策树模型评估器集成的也是CART树模型，稍后我们在介绍决策树建模流程的时候
+也将主要介绍CART树的建模流程。
+此处我们也可以参考sklearn中对于ID3、C4.5和CART树的对比描述：
+1
+需要注意的是，sklearn中也并非实现的是完全的CART树，通过相关评估器
+参数的调整，sklearn中也能实现“CART树的建模流程+C4.5的决策树生长
+指标”这种混合模型。
+此外，与其说CART树是一个非常“机器学习”的算法，不如说CART树是一个
+更加适合使用机器学习的方法来进行建模的模型，机器学习或者统计学建模
+方法更大程度上是一种建模思路，很多模型（像逻辑回归、包括树模型在
+内）其实都有机器学习实现的方式和统计学模型实现的方法。
+
+CHAID树
+CHAID是Chi-square automatic interaction detection的简称，由Kass在1975年提
+出，如果说CART树是一个典型的机器学习算法，那么CHAID树就是一个典型的统计学算
+法。从该算法的名字就能看出，整个决策树其实是基于卡方检验（Chi-square）的结果来
+构建的，并且整个决策树的建模流程（树的生长过程）及控制过拟合的方法（剪枝过程）
+都和C4.5、CART有根本性的区别，例如CART都只能构建二叉树，而CHAID可以构建多
+分枝的树（注：C4.5也可以构建多分枝的树）；例如C4.5和CART的剪枝都是自下而上
+（Bottom-up）进行剪枝，也被称为修剪法（Pruning Technique），而CHAID树则是自
+上而下（Top-Down）进行剪枝，也被称为盆栽法（Bonsai Technique）。当然，该决策
+树算法目前并非主流树模型，因此我们此处仅作简单介绍，并不做更加深入的探讨。
+上述讨论所涉及到的关键概念，如剪枝、划分规则提取方式、划分规则评估
+指标等内容，我们都将在下一小节进行详细介绍。
+在课程接下来的部分，我们将重点讨论关于CART树的建模流程，以及在Scikit-Learn
+中的实现方法。同时，ID3、C4.5决策树作为经典模型，尽管我们无法在sklearn中实现相
+关模型的建模，但对这些算法的了解仍然会非常有助于我们理解树模型的建模思想，因此
+我们后续也会以加餐形式介绍ID3、C4.5的基本建模流程。
+Lesson 8.2 CART分类树的建模流程与
+sklearn评估器参数详解
+根据上一小节的介绍我们知道，CART树是目前机器学习领域内最通用的决策树，并
+且CART树能够同时解决分类问题和回归问题。本节我们将首先介绍关于CART树在进行分
+类问题建模时的基本流程，同时详细讲解sklearn中相关评估器的参数情况与使用方法。
+In [1]:
+# 科学计算模块
+import numpy as np
+import pandas as pd
+# 绘图模块
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+# 自定义模块
+from ML_basic_function import *
+# Scikit-Learn相关模块
+# 评估器类
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import GridSearchCV
+# 实用函数
+from sklearn.model_selection import train_test_split
+
+from sklearn.metrics import accuracy_score
+# 数据准备
+from sklearn.datasets import load_iris
+一、CART决策树的分类流程
+从基本原理来说，决策是一种非常通用的模型，在模型训练时可以带入分类变量、也
+可以带入连续变量，同时在进行预测时既能解决分类问题也能解决回归问题，在介绍
+CART树的原理时，我们先从简单入手，先考虑自变量都是离散变量的分类预测问题，再
+逐步拓展连续变量的处理方法和回归类问题的预测方法。
+1.CART树的基本生长过程
+首先我们来看在特征都为分类变量时、围绕分类问题构建CART的基本过程。
+1.1 规则评估指标选取与设置
+划分规则评估指标概念
+在引言部分中我们曾简单构建了一个决策树，我们曾强调，决策树的建模过程实际上
+就是挖掘有效分类规律的过程，而这里的分类规律是否有效，其实是需要有一个评估标准
+的。此前我们是在逻辑回归的模型结论的基础上寻找分类规律，可以看成是根据分类结果
+的准确率来寻找分类规则，此时准确率就是评估分类条件好坏的评估指标，例如在决策树
+开始生长的第一层，我们选取petal length (cm) <= 2.5作为分类条件将原始数据集一分
+为二，分出来的两个数据集其中一个100%是一类数据，另一个则全是二、三类数据，此
+时如果我们根据准确率来判断该分类规则是否能够很好的区分一类和二、三类数据的话，
+那此时的准确率就是100%，此时的分类误差就是0。
+1
+划分规则评估指标构建的核心思路
+当然，这种定义分类评估指标的方法并不通用并且在多分类问题时容易引发混乱，例
+如如果是四分类问题，1条件能够100%区分A类和BCD类，2条件能够100%区分AB类和
+CD类，此时如何还按照准确率来进行判别分类条件好坏的判别一句，则选择哪个条件就
+成了问题。因此一般来说树模型挑选分类规则的评估指标并不是看每个类别划分后的准确
+率，而是父节点划分子节点后子节点数据集标签的纯度。
+注意，此处纯度是一个非常重要的概念，一般来说如果一个数据集标签都比较倾向于
+取得同一个值（不管是都取0还是都取1），则我们就说这个数据集的标签纯度高，反之则
+说这个这个数据集标签纯度不高。而决策树的划分规则的评估标准，其实都是根据纯度来
+进行构建的。
+其实，决策树生长的方向也就是令每个划分出来的子集纯度越来越高的方
+向。
+
+单独一个数据集的标签纯度衡量指标
+首先我们先来讨论对于一个单独的数据集来说，可以通过哪些指标来衡量该数据集标
+签的纯度。一般来说，用于衡量数据集标签纯度的数值指标一般有三种，分别是分类误
+差、信息熵和基尼系数，对于每个单独数据集来说，其基本计算公式如下：
+(1)分类误差（Classification error）：
+Classification error(t) = 1 − max[p(i|t)]
+1≤i≤c
+其中i表示第i类，当前数据集总共有c类， 代表第i类数据占当前数据集中总数据
+的比例。而所谓的分类误差，其实就是用1减去多数类的占比。例如某个包含10条数据的
+数据集，有6条0类数据、4条1类数据，此时该数据集分类误差就是1-6/10 = 0.4。分类误
+差在[0, 0.5]范围内取值，分类误差越小，说明数据集标签纯度越高。
+p(i|t)
+此外，由于决策树中每一个数据集实际上就代表一系列分类规则，因此分类
+误差的另一种理解方法是，如果需要根据少数服从多数原则对当前数据集选
+取一个唯一的标签（此前一系列分类规则输出一个最终结果），则只能将所
+有少数类的标签改成多数类的标签，此时误差（对应的分类规则的误差）就
+是所有少数类的数据占比。
+分类误差实际上就是贪心算法所使用的决策树划分规则评估指标
+(2)信息熵（Entropy）：
+c
+Entropy(t) = −
+∑
+i=1
+p(i|t)log2p(i|t)
+当然，我们此前所介绍的用于衡量数据混乱程度的信息熵也可以用于衡量数据集标签
+纯度，而信息熵的计算过程也正如此前介绍的一样：每个类别的数据占比乘以以2为底的
+对数处理结果，然后再进行不同类别的累加，最后进行负值处理。例如还是针对一个包含
+了6个0类、4个1类的数据集，信息熵计算结果为：
+In [2]:
+Out[2]:
+- 4/10 * np.log2(4/10) - 6/10 * np.log2(6/10)
+0.9709505944546686
+当然，回顾此前内容，信息熵也是在[0,1]之间取值，并且信息熵越小则说明数据集纯度越
+高。
+信息熵的相关详细介绍参见Lesson 4.2
+
+ID3、C4.5、C5.0算法主要使用信息熵进行划分规则的挑选
+(3)基尼系数（Gini）：
+c
+Gini(t) = 1 −
+∑
+i=1
+p(i|t)2
+此外，还有一个和信息熵的计算过程比较类似的评估指标——基尼系数。基尼系数通
+过计算1减去每个类别占比的平方和来作为纯度衡量指标，例如还是针对一个包含了6个0
+类、4个1类的数据集，基尼系数的计算结果为：
+In [3]:
+Out[3]:
+1 - np.power([4/10, 6/10], 2).sum()
+0.48
+而和信息熵不同的是，基尼系数在[0, 0.5]范围内取值，并且基尼系数越小表示数据集标签
+纯度越高
+In [4]:
+In [5]:
+p_l = np.arange(0, 1, 0.01)
+gini_l = []
+for p in p_l:
+gini_l.append(1 - np.power([p, 1-p], 2).sum())
+In [6]:
+Out[6]:
+plt.plot(p_l, gini_l)
+[<matplotlib.lines.Line2D at 0x7fbeaaebb6d0>]
+在默认情况下，CART树默认选择Gini系数作为评估指标。
+在随后的建模试验中，我们也默认采用基尼系数作为评估指标。
+当然我们也可以简单对比在二分类情况下三个评估指标伴随某类样本所占比例p值变
+化而变化的情况：
+
+In [7]:
+Out[7]:
+In [8]:
+np.max([1, 2])
+2
+ce_l = []
+gini_l = []
+en_l = []
+for p in p_l:
+ce_l.append(1-np.max([p, 1-p]))
+gini_l.append(1 - np.power([p, 1-p], 2).sum())
+en_l.append(entropy(p))
+In [9]:
+Out[9]:
+plt.plot(ce_l, 'b-', gini_l, 'r-', en_l, 'r--')
+[<matplotlib.lines.Line2D at 0x7fbeaafe80a0>,
+<matplotlib.lines.Line2D at 0x7fbeaafe80d0>,
+<matplotlib.lines.Line2D at 0x7fbeaafe8100>]
+多个数据集的平均指标
+在很多时候，我们不仅需要衡量单独数据集标签的纯度，我们还需要衡量多个数据集
+作为一个整体时的标签的纯度，例如一个父节点在划分成两个子节点时两个子节点整体的
+评估指标。此处我们举例说明：我们简化一组后续建模会用到的客户数据，简化后的数据
+集A共有两个特征、一个标签，并且标签只有0-1两个类别，数据集特征分别是收入
+（income）和信用评级（credit_rating），同样也都用有两个分类水平的离散变量表
+示。
+1
+此时我们首先可以计算该数据集整体的基尼系数：
+In [10]:
+p = 3/8
+gini_A = 1 - np.power([p, 1-p], 2).sum()
+gini_A
+Out[10]:
+0.46875
+然后我们随意设置一个分类条件。例如我们设置分类条件为income <= 1.5，则可以将上
+述数据集进一步划分成两个子数据集B1、B2:
+
+1
+In [11]:
+p = 2/5
+gini_B1 = 1 - np.power([p, 1-p], 2).sum()
+gini_B1
+Out[11]:
+0.48
+In [12]:
+而B2数据集只包含一个标签，因此B2的基尼系数为0
+gini_B2 = 0
+而此时如果要计算B1、B2整体的基尼系数，则需要在gini_B1、gini_B2的基础上进行各自
+数据集样本数量占整体数据集比例的加权求和，即根据如下方式进行计算：
+Gini(B) =
+其中 为子数据集 数据个数占父类数据集A中数据个数的比例。因此上述 、 整
+体基尼系数为：
+|Bi|
+|A|
+Bi
+B1 B2
+In [13]:
+Out[13]:
+gini_B = gini_B1 * 5/8 + gini_B2 * 3/8
+gini_B
+0.3
+至此，我们就构建了一个用于描述数据集划分完后两个子集的整体纯度的方法，而我们知
+道，子集整体纯度越高，其实也就说明对应分类规则越有效。接下来我们将详细讨论如何
+构建分类规则以及如何对这些分类规则进行评估。
+1.2 决策树备选规则创建方法
+正如此前所说，决策树模型的建模过程实际上就是在挑选有效分类规则的过程，而要
+挑选有效分类规则，首先就必须明确如何创建哪些备选规则，其实对于很多树模型，特征
+是离散型变量还是连续性变量会直接影响备选规则的创建，但对于CART树以及slearn中
+集成的方法来说，是将两种情况合二为一来进行看待，也就是根据如下方式来进行备选规
+则的创建：
+对于任何特征矩阵，首先需要逐列对其进行数值排序，例如上述数据集A，我们可以
+单独提取income和credit_rating两列来进行降序排序，排序结果如下：
+1
+|B1|
+|A|
+Gini(B1) +
+|B2|
+|A|
+Gini(B2)
+1
+据此，我们通过寻找这些特征不同取值之间的中间点作为切点，来构造备选规则。例
+如income有两个取值1、2，因此只有一个切点就是1.5，那么我们就能创造一个income
+<= 1.5的规则来对数据集进行划分，如此我们就能把income取值为1的数据划归一个子
+
+集、income取值为2的数据集划归另一个子集，实际上上面在介绍多数据集基尼系数计算
+过程时就是采用该规则。需要知道的是，在所构造的条件中不等号的方向实际上没有任何
+影响。当然，income只有两个取值只能找到一个切点只能构造一个规则，而
+credit_rating特征也有两个取值，因此也能找到一个切点构造一个备选规则，即我们其实
+也可以根据credit_rating <= 1.5来切分出两个子集。
+而其实如果特征是三个取值的特征，则可以找到两个切点、找到两种划分数据集的方
+式。更进一步的，如果该数据中某特征是连续变量，每条不同的数据取值都不同，例如：
+1
+则此时可以将其看成是拥有8个分类水平的分类变量，仍然还是寻找相邻取值水平的中间
+值作为切点来构造划分规则，此时由于age特征有8个不同的取值，因此可以构造7个备选
+的划分数据集的方法，例如age <= 36、age <= 34.5等等。也就是说，对于任何一个特
+征无论是连续型变量还是分类变量，只要有N个取值，就可以创造N-1个划分条件将原数
+据集划分成两份。
+正是因为可以用一种方法就能同时处理连续变量和离散变量，因此在决策树
+建模的过程中我们无需特别区分两种类型特征的区别。
+此外，需要注意的是，CART树用这种方法同时处理离散变量和连续变量，
+而C4.5只用这种方式处理连续变量（离散变量采用另一种方法），因此这
+里我们可以理解成是CART树将离散变量“连续化”，也就是将离散变量看成
+是连续变量，这也就是为何sklearn在说明文档中强调，sklearn的树模型无
+法处理分类变量的原因（原文：scikit-learn implementation does not
+support categorical variables for now.）。此处所谓的无法处理分类变量
+并不是不能带入分类变量进行建模，而是不支持类似C4.5的方法从离散特
+征中提取备选划分规则，而是会将离散变量也看成是连续变量，采用C4.5
+处理连续变量的方法处理离散变量。关于C4.5从离散特征中批量提取备选
+规则的方法我们会在课后阅读中介绍详细介绍。
+实际上，机器学习不同统计算法，大多数时候都不会刻意区分特征的连续与
+离散。
+1.3 挑选最佳分类规则划分数据集
+当然，对于上述A数据集，总共有两个特征，每个特征有一个备选划分规则，因此在
+对根结点划分时，其实是有两种数据集的划分方法，我们已经简单查看采用income <=
+1.5进行分类的结果：
+1
+而如果我们采用credit_rating <= 1.5来对数据集进行划分，则将出现下述结果：
+
+1
+从结果上来看，这两个划分条件都能切分出一个只包含一类标签的数据集，结果区分不是
+很大，那么到底应该选用哪个分类规则对数据集进行第一次切分、让决策树完成第一步的
+生长呢？这个时候就要用到此前我们介绍的关于评价分类规则是否有效的评估指标了，一
+般来说对于多个规则，我们首先会计算父节点的基尼系数（Gini(A)），然后计算划分出的
+两个子节点整体基尼系数（Gini(B)），然后通过对比哪种划分方式能够让二者差值更大，
+即能够让子节点的基尼系数下降更快，我们就选用哪个规则。例如对上述例子，我们知道
+在以income <= 1.5为规则划分数据集时，基尼系数下降结果为：
+In [14]:
+Out[14]:
+gini_A - gini_B
+0.16875
+而如果采用第二个划分规则来进行数据集切分，则此时基尼系数下降结果为：
+In [15]:
+p = 3/4
+gini_B2 = 1 - np.power([p, 1-p], 2).sum()
+gini_B2
+Out[15]:
+In [16]:
+In [17]:
+Out[17]:
+In [18]:
+Out[18]:
+0.375
+gini_B1 = 0
+gini_B = gini_B1 * 1/2 + gini_B2 * 1/2
+gini_B
+0.1875
+gini_A - gini_B
+0.28125
+很明显，第二个规则能够让父节点的基尼系数下降更快，因此第二个规则、即
+credit_rating <= 1.5划分规则是一个更好的规则，在第一次数据集划分时我们应该采用
+该规则。
+注，如果是ID3或者C4.5，此处则是以信息熵计算结果为准。
+1.4 决策树的生长过程
+当完成一次规则筛选与树生长后，接下来需要考虑的问题是，面对当前划分出的数据
+集B1、B2，是否还需要进一步寻找分类规则对其进行划分。
+1
+
+首先，对于数据集B1来说，由于其基尼系数已经为0，无需再进行计算；而B2数据集
+基尼系数为0.375，还可以进一步提取有效分类规则对其进行分类，以降低其基尼系数。
+此时我们又可以完全重复数据集A的划分过程，首先围绕数据集B2进行备选规则的提取，
+对于B2来说备选规则只有income <= 1.5一条，因此我们就以该规则划分数据集：
+1
+能够看出，最终划分出来的C1和C2基尼系数都是0，因此C的两个数据集整体基尼系数也
+是0，当然我们也无需进一步划分数据集，到此为止决策树也停止生长。
+决策树生长与迭代运算
+此前我们说到，决策树的生长过程本质上也是在进行迭代运算，我们根据上一轮的到
+的结论（数据集划分情况）作为基础条件，来寻找子数据集的最佳分类规则，然后来进行
+数据集划分，以此往复。既然是迭代运算，那就必然需要讨论所有迭代运算都需要考虑的
+两个问题，其一是每一轮的迭代目标、其二是迭代收敛条件。
+首先是每一轮迭代计算的目标，在梯度下降的计算过程中，每一轮迭代其实都是为了
+能够更大程度上降低损失函数值，在K-Means快速聚类中，每一轮迭代其实都是为了能够
+尽快降低组内误差平方和（SSE），而在决策树的建模过程中，每一轮迭代实际上是为了
+更快速的降低基尼系数，也就是希望这一轮划分出来的子数据集纯度尽可能高，从而说明
+该规则会对分类更加有效。因此如果我们可以将每一轮迭代过程中父类的基尼系数看成是
+损失函数值，树的迭代生长过程就是为了能够更快速的降低父类的基尼系数值。
+其次就是迭代计算的收敛条件。对于此前我们所介绍的收敛条件其实也同样适用于决
+策树模型，例如当两轮迭代损失函数的差值小于某个值、或者直接限制最大迭代次数，其
+实都是可以用于决策树模型的。此时所谓两轮迭代的损失值小于某个值就停止迭代，其实
+就等价于如果进一步的划分数据集、但基尼系数的减少少于某个值就暂时不做划分；而最
+大迭代次数其实就相当于树模型的最高生长层数，在实际建模过程中，我们也可以通过约
+束树最多生长几层来作为迭代收敛条件。当然，对于树模型来说，还有可能出现类似上述
+备选规则都用完了的情况，此时也会停止迭代。
+2.CART树的剪枝
+和逻辑回归不同，决策树在不进行特征衍生时就是一个分类效力更强的模型，因此其
+本身就是一个更容易过拟合的模型。并且通过观察我们不难发现，决策树生长的层数越多
+就表示树模型越复杂，此时模型结构风险就越高、模型越容易过拟合。因此，很多时候如
+果我们不对树的生长进行任何约束，即如果设置的收敛条件较为严格（例如要求最终基尼
+系数全为0），并且最大迭代次数不进行限制，则很有可能容易过拟合。因此在决策树的
+建模流程当中，有非常重要的一个环节，就是需要讨论限制决策树模型过拟合倾向的方
+法。
+当然，不同决策树算法的剪枝策略也各有不同，总的来说树模型的剪枝分为两种，其
+一在模型生长前就限制模型生长，这种方法也被称为预剪枝或者盆栽法；而另外一种方法
+则是先让树模型尽可能的生长，然后再进行剪枝，这种方法也被称为后剪枝或者修建法。
+从算法的原生原理来讲，目前主流的C4.5和CART树都采用的是后剪枝的方法，其中C4.5
+
+是通过计算叶节点的期望错误率（一种区间估计的方法）来进行剪枝，而CART树则是通
+过类似正则化的方法在损失函数（基尼系数计算函数）中加入结构复杂度的惩罚因子，来
+进行剪枝。
+不过，无论采用何种方式来进行剪枝，最终的结果都是通过控制树的结构复杂度来抑
+制过拟合倾向，而树模型的结构复杂度其实完全可以用树的层数、每一层分叉的节点数来
+表示，即内部节点和叶节点的数量来表示，因此我们也完全可以不采用这些树模型原生原
+理的方式来进行剪枝，而是直接将这些决定树模型的复杂度的因素视作超参数，然后通过
+网格搜索的方式来直接确定泛化能力最强的树模型结构。当然这也是sklearn中进行决策
+树剪枝的一般策略。
+在sklearn 0.22版本之前，甚至没有支持CART树实现原生原理剪枝方式的
+参数。
+二、CART分类树的Scikit-Learn快速实现方法与评
+估器参数详解
+1.CART分类树的sklearn快速实现
+In [19]:
+接下来我们尝试在Scikit-Learn中构建分类树模型。在sklearn中，回归树和分类树是
+两个不同的评估器，都在sklearn.tree模块内，我们可以通过如下方式进行导入：
+from sklearn.tree import DecisionTreeClassifier,DecisionTreeRegressor
+然后尝试围绕上述简单例子进行快速建模试验：
+In [38]:
+# 准备数据集
+X = np.array([[1, 1], [2, 2], [2, 1], [1, 2], [1, 1], [1, 2], [1, 2], [2, 1]])
+y = np.array([0, 0, 0, 1, 0, 1, 1, 0])
+In [39]:
+In [40]:
+Out[40]:
+# 调用决策树评估器并进行训练
+clf = DecisionTreeClassifier().fit(X, y)
+clf.score(X, y)
+1.0
+当然，对于树模型来说，我们不仅需要查看模型最终结果的评估指标，很多时候我们还希
+望能够观察到树模型分类过程的树状图，即类似于此前我们手动绘制的树状图。根据
+sklearn说明文档中的介绍，此处我们可以借助sklearn.tree模块下的plot_tree函数直接输
+入训练好的评估器即可进行绘制：
+plot_tree绘制树状图
+In [41]:
+# 首先导入tree模块
+from sklearn import tree
+
+In [42]:
+# 然后调用plot_tree函数进行绘制
+plt.figure(figsize=(6, 2), dpi=150)
+tree.plot_tree(clf)
+Out[42]:
+[Text(279.0, 188.75, 'X[1] <= 1.5\ngini = 0.469\nsamples = 8\nvalue = [5, 3]'),
+Text(139.5, 113.25, 'gini = 0.0\nsamples = 4\nvalue = [4, 0]'),
+Text(418.5, 113.25, 'X[0] <= 1.5\ngini = 0.375\nsamples = 4\nvalue = [1, 3]'),
+Text(279.0, 37.75, 'gini = 0.0\nsamples = 3\nvalue = [0, 3]'),
+Text(558.0, 37.75, 'gini = 0.0\nsamples = 1\nvalue = [1, 0]')]
+由于plot_tree是sklearn中已经集成好的函数，因此调用过程非常简单，我们只需要
+输入训练好的分类树评估器即可。同时根据输出的结果可知，sklearn中分类树的建模过
+程和此前我们手动哦实现的过程是一样的，先根据第一个特征的不同取值进行数据集划
+分，然后在根据第二个特征的不同取值进行数据集划分，最终形成一个三个叶节点、两层
+的决策树模型。
+当然，sklearn中的评估器使用过程基本一致，决策树模型评估器的简单使用也非常
+类似于逻辑回归评估器。此外，由于sklearn中优秀的参数默认值设置，使得很多时候我
+们直接使用其默认值就能完成不错的建模结果。接下来我们详细讨论决策树评估器中的相
+关参数，借此讨论关于sklearn中的决策树剪枝方法。
+In [25]:
+2.CART分类树评估器的参数详解
+实际上DecisionTreeClassifier评估器参数众多，并且大多和决策树的模型结构相关：
+DecisionTreeClassifier?
+
+Init signature:
+DecisionTreeClassifier(
+*,
+criterion='gini',
+splitter='best',
+max_depth=None,
+min_samples_split=2,
+min_samples_leaf=1,
+min_weight_fraction_leaf=0.0,
+max_features=None,
+random_state=None,
+max_leaf_nodes=None,
+min_impurity_decrease=0.0,
+min_impurity_split=None,
+class_weight=None,
+presort='deprecated',
+ccp_alpha=0.0,
+)
+Docstring:
+A decision tree classifier.
+Read more in the :ref:`User Guide <tree>`.
+Parameters
+---------
+criterion : {"gini", "entropy"}, default="gini"
+The function to measure the quality of a split. Supported criteria are
+"gini" for the Gini impurity and "entropy" for the information gain.
+splitter : {"best", "random"}, default="best"
+The strategy used to choose the split at each node. Supported
+strategies are "best" to choose the best split and "random" to choose
+the best random split.
+max_depth : int, default=None
+The maximum depth of the tree. If None, then nodes are expanded until
+all leaves are pure or until all leaves contain less than
+min_samples_split samples.
+min_samples_split : int or float, default=2
+The minimum number of samples required to split an internal node:
+- If int, then consider `min_samples_split` as the minimum number.
+- If float, then `min_samples_split` is a fraction and
+`ceil(min_samples_split * n_samples)` are the minimum
+number of samples for each split.
+.. versionchanged:: 0.18
+Added float values for fractions.
+min_samples_leaf : int or float, default=1
+The minimum number of samples required to be at a leaf node.
+A split point at any depth will only be considered if it leaves at
+least ``min_samples_leaf`` training samples in each of the left and
+right branches. This may have the effect of smoothing the model,
+especially in regression.
+- If int, then consider `min_samples_leaf` as the minimum number.
+- If float, then `min_samples_leaf` is a fraction and
+`ceil(min_samples_leaf * n_samples)` are the minimum
+
+number of samples for each node.
+.. versionchanged:: 0.18
+Added float values for fractions.
+min_weight_fraction_leaf : float, default=0.0
+The minimum weighted fraction of the sum total of weights (of all
+the input samples) required to be at a leaf node. Samples have
+equal weight when sample_weight is not provided.
+max_features : int, float or {"auto", "sqrt", "log2"}, default=None
+The number of features to consider when looking for the best split:
+- If int, then consider `max_features` features at each split.
+- If float, then `max_features` is a fraction and
+`int(max_features * n_features)` features are considered at each
+split.
+- If "auto", then `max_features=sqrt(n_features)`.
+- If "sqrt", then `max_features=sqrt(n_features)`.
+- If "log2", then `max_features=log2(n_features)`.
+- If None, then `max_features=n_features`.
+Note: the search for a split does not stop until at least one
+valid partition of the node samples is found, even if it requires to
+effectively inspect more than ``max_features`` features.
+random_state : int, RandomState instance, default=None
+Controls the randomness of the estimator. The features are always
+randomly permuted at each split, even if ``splitter`` is set to
+``"best"``. When ``max_features < n_features``, the algorithm will
+select ``max_features`` at random at each split before finding the best
+split among them. But the best found split may vary across different
+runs, even if ``max_features=n_features``. That is the case, if the
+improvement of the criterion is identical for several splits and one
+split has to be selected at random. To obtain a deterministic behaviour
+during fitting, ``random_state`` has to be fixed to an integer.
+See :term:`Glossary <random_state>` for details.
+max_leaf_nodes : int, default=None
+Grow a tree with ``max_leaf_nodes`` in best-first fashion.
+Best nodes are defined as relative reduction in impurity.
+If None then unlimited number of leaf nodes.
+min_impurity_decrease : float, default=0.0
+A node will be split if this split induces a decrease of the impurity
+greater than or equal to this value.
+The weighted impurity decrease equation is the following::
+N_t / N * (impurity - N_t_R / N_t * right_impurity
+- N_t_L / N_t * left_impurity)
+where ``N`` is the total number of samples, ``N_t`` is the number of
+samples at the current node, ``N_t_L`` is the number of samples in the
+left child, and ``N_t_R`` is the number of samples in the right child.
+``N``, ``N_t``, ``N_t_R`` and ``N_t_L`` all refer to the weighted sum,
+if ``sample_weight`` is passed.
+.. versionadded:: 0.19
+
+min_impurity_split : float, default=0
+Threshold for early stopping in tree growth. A node will split
+if its impurity is above the threshold, otherwise it is a leaf.
+.. deprecated:: 0.19
+``min_impurity_split`` has been deprecated in favor of
+``min_impurity_decrease`` in 0.19. The default value of
+``min_impurity_split`` has changed from 1e-7 to 0 in 0.23 and it
+will be removed in 0.25. Use ``min_impurity_decrease`` instead.
+class_weight : dict, list of dict or "balanced", default=None
+Weights associated with classes in the form ``{class_label: weight}``.
+If None, all classes are supposed to have weight one. For
+multi-output problems, a list of dicts can be provided in the same
+order as the columns of y.
+Note that for multioutput (including multilabel) weights should be
+defined for each class of every column in its own dict. For example,
+for four-class multilabel classification weights should be
+[{0: 1, 1: 1}, {0: 1, 1: 5}, {0: 1, 1: 1}, {0: 1, 1: 1}] instead of
+[{1:1}, {2:5}, {3:1}, {4:1}].
+The "balanced" mode uses the values of y to automatically adjust
+weights inversely proportional to class frequencies in the input data
+as ``n_samples / (n_classes * np.bincount(y))``
+For multi-output, the weights of each column of y will be multiplied.
+Note that these weights will be multiplied with sample_weight (passed
+through the fit method) if sample_weight is specified.
+presort : deprecated, default='deprecated'
+This parameter is deprecated and will be removed in v0.24.
+.. deprecated:: 0.22
+ccp_alpha : non-negative float, default=0.0
+Complexity parameter used for Minimal Cost-Complexity Pruning. The
+subtree with the largest cost complexity that is smaller than
+``ccp_alpha`` will be chosen. By default, no pruning is performed. See
+:ref:`minimal_cost_complexity_pruning` for details.
+.. versionadded:: 0.22
+Attributes
+---------
+classes_ : ndarray of shape (n_classes,) or list of ndarray
+The classes labels (single output problem),
+or a list of arrays of class labels (multi-output problem).
+feature_importances_ : ndarray of shape (n_features,)
+The impurity-based feature importances.
+The higher, the more important the feature.
+The importance of a feature is computed as the (normalized)
+total reduction of the criterion brought by that feature. It is also
+known as the Gini importance [4]_.
+Warning: impurity-based feature importances can be misleading for
+high cardinality features (many unique values). See
+
+:func:`sklearn.inspection.permutation_importance` as an alternative.
+max_features_ : int
+The inferred value of max_features.
+n_classes_ : int or list of int
+The number of classes (for single output problems),
+or a list containing the number of classes for each
+output (for multi-output problems).
+n_features_ : int
+The number of features when ``fit`` is performed.
+n_outputs_ : int
+The number of outputs when ``fit`` is performed.
+tree_ : Tree
+The underlying Tree object. Please refer to
+``help(sklearn.tree._tree.Tree)`` for attributes of Tree object and
+:ref:`sphx_glr_auto_examples_tree_plot_unveil_tree_structure.py`
+for basic usage of these attributes.
+See Also
+-------
+DecisionTreeRegressor : A decision tree regressor.
+Notes
+----
+The default values for the parameters controlling the size of the trees
+(e.g. ``max_depth``, ``min_samples_leaf``, etc.) lead to fully grown and
+unpruned trees which can potentially be very large on some data sets. To
+reduce memory consumption, the complexity and size of the trees should be
+controlled by setting those parameter values.
+References
+---------
+.. [1] https://en.wikipedia.org/wiki/Decision_tree_learning
+.. [2] L. Breiman, J. Friedman, R. Olshen, and C. Stone, "Classification
+and Regression Trees", Wadsworth, Belmont, CA, 1984.
+.. [3] T. Hastie, R. Tibshirani and J. Friedman. "Elements of Statistical
+Learning", Springer, 2009.
+.. [4] L. Breiman, and A. Cutler, "Random Forests",
+https://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm
+Examples
+-------
+>>> from sklearn.datasets import load_iris
+>>> from sklearn.model_selection import cross_val_score
+>>> from sklearn.tree import DecisionTreeClassifier
+>>> clf = DecisionTreeClassifier(random_state=0)
+>>> iris = load_iris()
+>>> cross_val_score(clf, iris.data, iris.target, cv=10)
+...
+# doctest: +SKIP
+...
+array([ 1.
+, 0.93..., 0.86..., 0.93..., 0.93...,
+0.93..., 0.93..., 1.
+, 0.93..., 1.
+])
+
+File:
+~/opt/anaconda3/lib/python3.8/site-packages/sklearn/tree/_classe
+s.py
+Type:
+Subclasses:
+Name
+criterion
+splitter
+max_depth
+min_samples_split
+min_samples_leaf
+min_weight_fraction_leaf
+max_features
+random_state
+max_leaf_nodes
+min_impurity_decrease
+min_impurity_split
+class_weight
+presort
+ccp_alpha
+ABCMeta
+ExtraTreeClassifier
+Description
+规则评估指标或损失函数，默认基尼系数，可选信息熵
+树模型生长方式，默认以损失函数取值减少最快方式生长，可选
+随机根据某条件进行划分
+树的最大生长深度，类似max_iter，即总共迭代几次
+内部节点再划分所需最小样本数
+叶节点包含最少样本数
+叶节点所需最小权重和
+在进行切分时候最多带入多少个特征进行划分规则挑选
+随机数种子
+叶节点最大个数
+数据集再划分至少需要降低的损失值
+数据集再划分所需最低不纯度，将在0.25版本中移除
+各类样本权重
+已在0.24版本中移除
+在执行CART树原生原理中的剪枝流程时结构复杂度惩罚因子的
+系数，默认情况下不使用该方法进行剪枝
+接下来围绕一些重点参数进行详细讲解：
+criterion：不纯度衡量指标
+首先，我们发现尽管sklearn的树模型在默认情况下是CART树，但同样支持使用信息
+熵来衡量不纯度。不过需要注意的是，哪怕我们在criterion参数中选择信息熵，实际树模
+型的建模过程也不是按照ID3或者C4.5的流程执行，此时的树模型只能算是一种混合模
+型。而关于到底应该选择哪个指标来衡量数据集的不纯度，其实大多数情况下选择哪个指
+标并不会实质影响树模型的结构，但相比信息熵，基尼系数复杂度更低、计算速度更快，
+一般情况下推荐使用基尼系数。而如果一定要寻找二者在使用上的不同，一般认为在有些
+情况下，基尼不纯度更倾向于在数据集中分割出多数类，而信息熵则更倾向于生成出更加
+平衡的树。
+ccp_alpha：结构风险权重
+ccp是复杂度剪枝（Cost-Complexity Pruning）的简称，这是一个在sklearn的0.22
+版本中才加入的参数，这也是唯一一个为实现CART原生原理中的剪枝过程所设置的参
+数。此处首先需要知道的是在sklearn中并不一定要通过该方法进行剪枝，因此该参数其
+实也并不是一个必选参数。其次，带有ccp项的剪枝也被称为最小复杂度剪枝，其原理是
+在决策树的损失函数上加上一个结构风险项，类似于正则化项在线性方程的损失函数中作
+
+用相同。
+我们可以设T为某决策树， 为决策树在训练集上整体不纯度，即代表模型的经验
+风险，令 表示模型结构风险，其中 为参数， 为树的叶节点数量，则我们可以修
+改模型损失函数如下：
+R(T)
+α| ˜T|
+α
+| ˜T|
+Rα(T) = R(T) + α| ˜T|
+其中Rα(T)就是加入风险结构项后的损失函数，而α则是风险结构项的系数。由此可
+知， 取值越大、对模型的结构风险惩罚力度就越大、模型结构就越简单、过拟合就能够
+被更好的抑制，反之亦反。
+α
+控制树结构的参数类
+接下来就是关于控制树模型结构的相关参数，同时这也是最多的一类参数。这类参数
+可以进一步细分成两类，其一是限制模型整体结构，主要包括限制树深度的max_depth参
+数和限制叶节点数量的max_leaf_nodes参数。此外第二类就是限制树生长的参数，包括
+从节点样本数量限制树生长的参数，包括min_samples_split、min_samples_leaf两个参
+数，当然也有从损失值降低角度出发限制树生长的参数，包括min_impurity_split和
+min_impurity_decrease参数。通过这些参数的共同作用，可以从各角度有效限制树的生
+长。
+注意，所谓树的最大深度，指的是树的最多生长几层，或者除了根节点外总
+共有几层，并不是树的总共的层数。
+此处需要重点说明的是，对于树模型来说，叶节点太多、单独叶节点所包含的样本数
+量太少、内部节点再划分降低的基尼系数较少，都是可能是过拟合的表现，在建模时尤其
+需要注意。
+并且需要知道的是，sklearn中在计算父节点和子节点的基尼系数（或信息熵）的差
+值时，会在计算结果的前面乘以一个父节点占根节点数据量比例的系数作为最终
+impurity_decrease的结果：
+1
+而这会导致样本比较少的某节点，哪怕再划分时子节点纯度提升更高，但由于当前节点样
+本较少，因此impurity_decrease数值较低。这其实也是一种为了防止过拟合而采取的措
+施。
+控制迭代随机过程的参数类
+最后，还有一类参数值得注意，那就是关于控制建模过程中随机性的一些参数，主要
+包含两个，其一是splitter参数，当该参数取值为random时其实是随机挑选分类规则对当
+前数据集进行划分，其二是max_features，该参数可以任意设置最多带入几个特征进行备
+选规律挖掘，只要该参数的设置不是带入全部特征进行建模，就相当于是给备选特征随机
+划个范围，也相当于是给树模型的训练增加了一定的随机性。当然，这两个参数的主要作
+
+用有两个方面，其一是可以提升模型训练速度，试想一下，如果我们只从个别特征中挑选
+最佳划分规则，或者随机生成一个划分规则、不进行比较就直接使用，其实都能够极大节
+省计算量，只不过这也是一种用精度换效率的方式，如此操作肯定会带来模型结果精度的
+下降；不过随机性其实也是一把双刃剑，在集成学习中，为了让各基础分类器“和而不
+同”，就必须让每个基分类器保证一定的随机性，而决策树就是最常作为基分类器参与到
+集成学习中的模型，因此树模型中的这些控制其随机性的参数，也会在集成学习中发挥作
+用。
+更多关于决策树的使用及各类参数的使用及调参方法，我们将在后续内容中进行详细
+介绍。
+Lesson 8.3 ID3、C4.5决策树的建模流程
+ID3和C4.5作为的经典决策树算法，尽管无法通过sklearn来进行建模，但其基本原理
+仍然值得讨论与学习。接下来我们详细介绍关于ID3和C4.5这两种决策树模型的建模基本
+思路和原理。ID3和C4.5的基本建模流程和CART树是类似的，也是根据纯度评估指标选取
+最佳的数据集划分方式，只是不过ID3和C4.5是以信息熵为评估指标，而数据集的离散特
+征划分方式也是一次展开一列，而不是寻找切点进行切分。我们先从ID3的基本原理开始
+介绍，随后讨论C4.5在ID3基础上的改善措施。
+In [9]:
+import numpy as np
+from ML_basic_function import *
+一、ID3决策树的基本建模流程
+ID3是一个只能围绕离散型变量进行分类问题建模的决策树模型，即ID3无法处理连续
+型特征、也无法处理回归问题，如果带入训练数据有连续型变量，则首先需要对其进行离
+散化处理，也就是连续变量分箱。例如如下个人消费数据，各特征都是离散型变量，能够
+看出，其中age和income两列就是连续型变量分箱之后的结果，例如age列就是以30、
+40为界进行连续变量分箱。当然，除了如下表示外，我们还可以将分箱之后的结果直接赋
+予一个离散的值，如1、2、3等。
+1
+更多关于连续变量的离散化的方法将在特征工程部分进行介绍。
+ID3的生长过程其实和CART树基本一致，其目标都是尽可能降低数据集的不纯度，其
+生长的过程也就是数据集不断划分的过程。只不过ID3的数据集划分过程（规律提取过
+程）和CART树有所不同，CART树是在所有特征中寻找切分点、然后再从中挑选出能够最
+大程度降低数据集不纯度的节分方式，换而言之就是CART树是按照某切分点来展开，而
+ID3则是按照列来展开，即根据某列的不同取值来对数据集进行划分。例如根据上述数据
+集中的age列的不同取值来对原始数据集进行划分，则划分结果如下：
+1
+
+同样，我们可以计算在以age的不同取值为划分规则、对数据集进行划分后数据集整体不
+纯度下降结果，ID3中采用信息熵作为评估指标，具体计算过程如下：
+首先计算父节点的信息熵
+In [10]:
+# 父节点A的信息熵
+ent_A = -5/14 * np.log2(5/14) - 9/14 * np.log2(9/14)
+ent_A
+Out[10]:
+0.9402859586706311
+然后计算每个子节点的信息熵
+In [16]:
+# 子节点B的信息熵
+ent_B1 = entropy(2/5)
+ent_B2 = entropy(2/5)
+ent_B3 = 0
+ent_B1, ent_B2, ent_B3
+Out[16]:
+(0.9709505944546686, 0.9709505944546686, 0)
+同样，子节点整体信息熵就是每个子节点的信息熵加权求和计算得出，其权重就是各子节
+点数据集数量占父节点总数据量的比例：
+In [20]:
+Out[20]:
+ent_B = ent_B1 * 5/14 + ent_B2 * 5/14 + ent_B3 * 4/14
+ent_B
+0.6935361388961919
+然后即可算出按照如此规则进行数据集划分，最终能够减少的不纯度数值：
+In [21]:
+Out[21]:
+# 不纯度下降结果
+ent_A - ent_B
+0.24674981977443922
+而该结果也被称为根据age列进行数据集划分后的信息增益（information gain），上述
+结果可写成Gain(age) = 0.247
+当然，至此我们只计算了按照age列的不同取值来进行数据集划分后数据集不纯度下
+降结果，而按照age列进行展开只能算是树的第一步生长中的一个备选划分规则，此外我
+们还需要测试按照income、student或者credit_rating列展开后数据集不纯度下降情况，
+具体计算过程和age列展开后的计算过程类似，此处直接给出结果，
+Gain(income)=0.026、Gain(student)=0.151、Gain(credit_rating)=0.048。很明显，
+按照age列展开能够更有效的降低数据集的不纯度，因此树的第一层生长就是按照age列
+的不同取值对数据集进行划分。
+1
+接下来需要继续进行迭代，通过观察我们不难发现，对于数据集B1来说来说，按照
+student这一列来进行展开，能够让子节点的信息熵归零，而数据集B2按照如果按照
+
+credit_rating来展开，也同样可以将子节点的标签纯度提高至100%。因此该模型最终树
+的生长形态如下：
+1
+至此，我们就完成了ID3决策树的建模全流程，具体模型结果解读和CART树完全一
+样，此处不做赘述。接下来简单对比ID3和CART树之间的差异：首先，由于ID3是按照列
+来提取规则、每次展开一列，因此每一步生长会有几个分支，其实完全由当前列有几个分
+类水平决定，而CART树只能进行二叉树的生长；其次，由于ID3每次展开一列，因此建模
+过程中对“列的消耗”非常快，数据集中特征个数就决定了树的最大深度，相比之下CART树
+的备选规则就要多的多，这也使得CART树能够进行更加精细的规则提取；当然，尽管
+CART树和ID3存在着基本理论层面的差异，但有的时候也能通过CART树的方法来挖掘出
+和ID3决策树相同的规律，例如ID3中按照age列一层展开所提取出的三个分类规则，也可
+以在CART树中通过两层树来实现，例如第一层按照是否是<=30来进行划分、第二层围绕
+不满足第一层条件的数据集进一步根据是否>40来进行划分。
+此外，需要注意的是，正因为ID3是按照列来进行展开，因此只能处理特征都是离散
+变量的数据集。另外，根据ID3的建模规则我们不难发现，ID3树在实际生长过程中会更倾
+向于挑选取值较多的分类变量展开，但如此一来便更加容易造成模型过拟合，而遗憾的是
+ID3并没有任何防止过拟合的措施。而这些ID3的缺陷，则正是C4.5算法的改进方向。接
+下来我们继续讨论关于C4.5决策树的建模规则。
+当然，对于ID3来说，规则是和分类变量的取值一一绑定的，
+二、C4.5决策树的基本建模流程
+作为ID3的改进版算法，C4.5在ID3的基础上进行了三个方面的优化，首先在衡量不
+纯度降低的数值计算过程中引入信息值（information value，也被称为划分信息度、分
+支度等）概念来修正信息熵的计算结果，以抑制ID3更倾向于寻找分类水平较多的列来展
+开的情况，从而间接抑制模型过拟合倾向；其二则是新增了连续变量的处理方法，也就是
+CART树中寻找相邻取值的中间值作为切分点的方法；其三是加入了决策树的剪枝流程，
+使得模型泛化能力能够得到进一步提升。但需要注意的是，尽管有如此改进，但C4.5仍然
+只能解决分类问题，其本质仍然还是一种分类树。接下来我们详细讨论C4.5的具体改进策
+略。
+信息值（information value）
+C4.5中信息值（以下简称IV值）是一个用于衡量数据集在划分时分支个数的指标，如
+果划分时分支越多，IV值就越高。具体IV值的计算公式如下：
+K
+Information Value = −
+∑
+i=1
+P(vi)log2P(vi)
+
+IV值计算公式和信息熵的计算公式基本一致，只是具体计算的比例不再是各
+类样本所占比例，而是各划分后子节点的数据所占比例，或者说信息熵是计
+算标签不同取值的混乱程度，而IV值就是计算特征不同取值的混乱程度
+其中K表示某次划分是总共分支个数， 表示划分后的某样本， 表示该样本数量占
+父节点数据量的比例。对于如下三种数据集划分情况，简单计算IV值：
+vi
+In [28]:
+Out[28]:
+In [31]:
+Out[31]:
+In [32]:
+Out[32]:
+# 父节点按照50%-50%进行划分
+- (1/2 * np.log2(1/2) + 1/2 * np.log2(1/2))
+1.0
+# 父节点按照1/4-1/2-1/4进行划分
+- (1/4 * np.log2(1/4) + 1/2 * np.log2(1/2)+ 1/4 * np.log2(1/4))
+1.5
+# 父节点按照1/4-1/4-1/4-1/4进行划分
+- (1/4 * np.log2(1/4) + 1/4 * np.log2(1/4) + 1/4 * np.log2(1/4) + 1/4 * np.log2(
+2.0
+而在实际建模过程中，ID3是通过信息增益的计算结果挑选划分规则，而C4.5采用IV值对
+信息增益计算结果进行修正，构建新的数据集划分评估指标：增益比例（Gain Ratio，被
+称为获利比例或增益率），来指导具体的划分规则的挑选。GR的计算公式如下：
+Gain Ratio =
+Information Gain
+Information Value
+也就是说，在C4.5的建模过程中，需要先计算GR，然后选择GR计算结果较大的列来
+执行这一次展开。例如对于上述例子来看，以age列展开后Information Gain结果为：
+In [37]:
+Out[37]:
+IG = ent_A - ent_B
+IG
+0.24674981977443922
+1
+P(vi)
+而IV值为：
+In [36]:
+Out[36]:
+IV = - (5/14 * np.log2(5/14) + 5/14 * np.log2(5/14)+ 4/14 * np.log2(4/14))
+IV
+1.5774062828523454
+因此计算得到GR值为：
+In [38]:
+GR = IG / IV
+GR
+
+Out[38]:
+0.1564275624211752
+然后据此进一步计算其他各列展开后的GR值，并选择GR较大者进行数据集划分。
+C4.5的连续变量处理方法
+C4.5允许带入连续变量进行建模，并且围绕连续变量的规则提取方式和此前介绍的
+CART树一致。即在连续变量中寻找相邻的取值的中间点作为备选切分点，通过计算切分
+后的GR值来挑选最终数据集划分方式。当然，基于连续变量的备选切分方式也要和离散
+变量的切分方式进行横向比较，到底是一次展开一个离散列还是按照连续变量的某个切点
+展开，要根据最终GR的计算结果来决定。
+例如，如果将上述数据集的age列换成连续变量，则我们需要计算的GR情况就变成了
+GR(income)、GR(student)、GR(credit_rating)、GR(age<=26.5)、GR(age<=27.5)...
+1
+当然，由于C4.5的离散变量和连续变量提取规则方式不同，离散变量是一
+次消耗一列来进行展开（有可能多分叉），而连续变量则一次消耗一个切分
+点，因此和CART树一样、同一个连续变量可以多次指导数据集进行划分。
+在sklearn的树模型介绍文档中，有一段关于sklearn的决策树不支持离散变
+量建模的说明，其意为不支持按照类似ID3或C4.5的方式直接将离散变量按
+列来进行展开，而是根据sklearn中集成的CART树自身的建模规则，使得
+sklearn中的决策树实际上在处理特征时都是按照C4.5中连续变量的处理方
+式在进行处理，并非指的是带入离散变量就无法建模。
+Lesson 8.4 CART回归树的建模流程与
+sklearn参数详解
+接下来，我们继续讨论关于CART回归树的相关内容。
+根据此前介绍，CART树能同时解决分类问题和回归问题，但由于两类问题的性质还
+是存在一定的差异，因此CART树在处理不同类型问题时相应建模流程也略有不同，当然
+对应的sklearn中的评估器也是不同的。并且值得一提的是，尽管回归树单独来看是解决
+回归类问题的模型，但实际上回归树其实是构建梯度提升树（GBDT，一种集成算法）的
+基础分类器，并且无论是解决回归类问题还是分类问题，CART回归树都是唯一的基础分
+类器，因此哪怕单独利用回归树解决问题的场景并不多见，但对于CART回归树的相关方
+法仍然需要重点掌握，从而为后续集成算法的学习奠定基础。
+本节我们将在CART分类树的基础之上详细讨论CART树在处理回归问题时的基本流
+程，并详细介绍关于CART回归树在sklearn中评估器的的相关参数与使用方法。
+In [2]:
+# 科学计算模块
+import numpy as np
+import pandas as pd
+
+# 绘图模块
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+# 自定义模块
+from ML_basic_function import *
+# Scikit-Learn相关模块
+# 评估器类
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import GridSearchCV
+from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier,DecisionTreeRegressor
+# 实用函数
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+# 数据准备
+from sklearn.datasets import load_iris
+一、CART回归树的基本建模流程
+同样，我们先从一个极简的例子来了解CART回归树的基本建模流程，然后再介绍通
+过数学语言描述得更加严谨的建模流程。
+数据准备
+首先我们创建一个简单的回归数据集如下，该数据集只包含一个特征和一个连续型标
+签：
+1
+In [3]:
+Out[3]:
+data = np.array([[1, 1], [2, 3], [3, 3], [4, 6], [5, 6]])
+plt.scatter(data[:, 0], data[:, 1])
+<matplotlib.collections.PathCollection at 0x7fb9a8fd38e0>
+
+其中横坐标代表数据集特征，纵坐标代表数据集标签。
+生成备选规则
+CART回归树和分类树流程类似，从具体操作步骤来看，首先都是寻找切分点对数据
+集进行切分，或者说需要确定备选划分规则。
+回归树中寻找切分点的方式和分类树的方式相同，都是逐特征寻找不同取值的中间点
+作为切分点。对于上述数据集来说，由于只有一个特征，并且总共有5个不同的取值，因
+此切分点有4个。而根据此前介绍，有几个切分点就有几种数据集划分方式、即有同等数
+量的备选划分规则、或有同等数量的树的生长方式。初始数据集的4个不同的划分方式，
+可以通过如下方式进行呈现：
+In [4]:
+In [5]:
+y_range = np.arange(1, 6, 0.1)
+plt.subplot(221)
+plt.scatter(data[:, 0], data[:, 1])
+plt.plot(np.full_like(y_range, 1.5), y_range, 'r--')
+plt.subplot(222)
+plt.scatter(data[:, 0], data[:, 1])
+plt.plot(np.full_like(y_range, 2.5), y_range, 'r--')
+plt.subplot(223)
+plt.scatter(data[:, 0], data[:, 1])
+plt.plot(np.full_like(y_range, 3.5), y_range, 'r--')
+plt.subplot(224)
+plt.scatter(data[:, 0], data[:, 1])
+plt.plot(np.full_like(y_range, 4.5), y_range, 'r--')
+Out[5]:
+[<matplotlib.lines.Line2D at 0x7fb9889bdb80>]
+
+挑选规则
+在确定了备选划分规则之后，接下来需要根据某种评估标准来寻找最佳划分方式。回
+归树的该步骤和分类树差异较大，分类树中我们是采用基尼系数或者信息熵来衡量划分后
+数据集标签不纯度下降情况来挑选最佳划分方式，而在回归树中，则是根据划分之后子数
+据集MSE下降情况来进行最佳划分方式的挑选。在该过程中，子数据集整体的MSE计算方
+法也和CART分类树类似，都是先计算每个子集单独的MSE，然后再通过加权求和的方法
+来进行计算两个子集整体的MSE。
+此处MSE的计算虽然不复杂，但我们知道，但凡需要计算MSE，就必须给出一个预测
+值，然后我们才能根据预测值和真实值计算MSE。而CART回归树在进行子数据集的划分
+之后，会针对每个子数据集给出一个预测值（注意是针对一个子数据集中所有数据给出一
+个预测值，而不是针对每一个数给出一个预测值），而该预测值会依照让对应子数据集
+MSE最小的目标进行计算得出。
+让MSE取值最小这一目标其实等价于让SSE取值最小，而用一个数对一组数进行预测
+并且要求SSE最小，其实就相当于K-Means快速聚类过程中所要求的寻找组内误差平方和
+最小的点作为中心点，我们曾在Lesson 7中进行过相关数学推导，此时选取这组数的质心
+能够让组内误差平方和计算结果最小。而此时情况也是类似，只不过我们针对一组一维的
+数据去寻找一个能够使得组内误差平方和的最小的点，这个点仍然是这组数据的质心，而
+一维数据的质心，其实就是这组数据的均值。那么也就是说，在围绕让每一个子数据集
+MSE取值最小这一目标下，每个子数据集的最佳预测值就是这个子数据集真实标签的均
+值。
+具体计算过程如下，例如对上述第一种划分数据集的情况来说，每个子数据集的预测
+值和MSE计算结果如下：
+In [6]:
+Out[6]:
+plt.scatter(data[:, 0], data[:, 1])
+plt.plot(np.full_like(y_range, 1.5), y_range, 'r--')
+[<matplotlib.lines.Line2D at 0x7fb9d9192250>]
+
+对应划分情况也可以通过如下形式进行表示：
+1
+此时可计算子数据集B1和B2的MSE，首先是两个数据集的预测值，也就是两个数据集的
+均值：
+In [7]:
+Out[7]:
+In [8]:
+data[0, 1]
+1
+# B1数据集的预测值
+y_1 = np.mean(data[0, 0])
+y_1
+Out[8]:
+In [9]:
+Out[9]:
+In [10]:
+1.0
+data[1: , 1]
+array([3, 3, 6, 6])
+# B2数据集的预测值
+y_2 = np.mean(data[1: , 1])
+y_2
+Out[10]:
+In [11]:
+4.5
+# 模型预测结果
+plt.scatter(data[:, 0], data[:, 1])
+plt.plot(np.full_like(y_range, 1.5), y_range, 'r--')
+plt.plot(np.arange(0, 1.5, 0.1), np.full_like(np.arange(0, 1.5, 0.1), y_1), 'r-'
+plt.plot(np.arange(1.7, 5.1, 0.1), np.full_like(np.arange(1.7, 5.1, 0.1), y_2),
+Out[11]:
+[<matplotlib.lines.Line2D at 0x7fb9d9210df0>]
+
+然后计算两个子集的MSE：
+In [12]:
+In [13]:
+# B1的MSE
+mse_b1 = 0
+# B2的MSE
+mse_b2 = np.power(data[1: , 1] - 4.5, 2).sum() / 4
+mse_b2
+Out[13]:
+2.25
+然后和CART分类树一样，以各子集所占全集的样本比例为权重，通过加权求和的方式计
+算两个子集整体的MSE：
+In [14]:
+Out[14]:
+mse_b = 1/5 * mse_b1 + 4/5 * mse_b2
+mse_b
+1.8
+In [15]:
+Out[15]:
+In [16]:
+Out[16]:
+而父节点的MSE为：
+data[: , 1].mean()
+3.8
+mse_a = np.power(data[: , 1] - data[: , 1].mean(), 2).sum() / data[: , 1].size
+mse_a
+3.7599999999999993
+In [17]:
+Out[17]:
+因此，本次划分所降低的MSE为：
+mse_a - mse_b
+1.9599999999999993
+即为该种划分方式的最终评分。当然，我们要以相似的流程计算其他几种划分方式的评
+分，然后从中挑选能够最大程度降低MSE的划分方式，基本流程如下：
+
+In [29]:
+impurity_decrease = []
+for i in range(4):
+# 寻找切分点
+splitting_point = data[i: i+2 , 0].mean()
+# 进行数据集切分
+data_b1 = data[data[:, 0] <= splitting_point]
+data_b2 = data[data[:, 0] > splitting_point]
+# 分别计算两个子数据集的MSE
+mse_b1 = np.power(data_b1[: , 1] - data_b1[: , 1].mean(), 2).sum() / data_b1
+mse_b2 = np.power(data_b2[: , 1] - data_b2[: , 1].mean(), 2).sum() / data_b2
+# 计算两个子数据集整体的MSE
+mse_b = data_b1[: , 1].size/data[: , 1].size * mse_b1 + data_b2[: , 1].size/
+#mse_b = mse_b1 + mse_b2
+# 计算当前划分情况下MSE下降结果
+impurity_decrease.append(mse_a - mse_b)
+In [30]:
+Out[30]:
+In [20]:
+impurity_decrease
+[1.9599999999999993, 2.1599999999999993, 3.226666666666666, 1.209999999999999]
+plt.subplot(221)
+plt.scatter(data[:, 0], data[:, 1])
+plt.plot(np.full_like(y_range, 1.5), y_range, 'r--')
+plt.subplot(222)
+plt.scatter(data[:, 0], data[:, 1])
+plt.plot(np.full_like(y_range, 2.5), y_range, 'r--')
+plt.subplot(223)
+plt.scatter(data[:, 0], data[:, 1])
+plt.plot(np.full_like(y_range, 3.5), y_range, 'r--')
+plt.subplot(224)
+plt.scatter(data[:, 0], data[:, 1])
+plt.plot(np.full_like(y_range, 4.5), y_range, 'r--')
+Out[20]:
+[<matplotlib.lines.Line2D at 0x7fb9d9149ac0>]
+根据最终结果能够看出，第三种划分情况能够最大程度降低MSE，即此时树模型的第一次
+生长情况如下：
+
+1
+进行多轮迭代
+当然，和CART分类树一样，接下来，我们就能够进一步围绕B1和B2进行进一步划
+分。此时B2的MSE已经为0，因此无需再进行划分，而B1的MSE为0.88，还可以进一步进
+行划分。当然B1的划分过程也和A数据集的划分过程一致，寻找能够令子集MSE下降最多
+的方式进行切分。不过由于B1数据集本身较为简单，通过观察不难发现，我们可以以x<=
+1.5作为划分条件对其进行切分，进一步切分出来的子集的MSE都将取值为0。
+1
+此外，我们也可以观察当回归树生长了两层之后，相关规则对原始数据集的划分情况：
+In [21]:
+# 数据分布
+plt.scatter(data[:, 0], data[:, 1])
+# 两次划分
+plt.plot(np.full_like(y_range, 3.5), y_range, 'r--')
+plt.plot(np.full_like(y_range, 1.5), y_range, 'r--')
+# 预测结果
+plt.plot(np.arange(1, 1.5, 0.1), np.full_like(np.arange(1, 1.5, 0.1), 1), 'r-')
+plt.plot(np.arange(1.5, 3.5, 0.1), np.full_like(np.arange(1.5, 3.5, 0.1), 3), 'r
+plt.plot(np.arange(3.5, 5, 0.1), np.full_like(np.arange(3.5, 5, 0.1), 6), 'r-')
+Out[21]:
+[<matplotlib.lines.Line2D at 0x7fb9d916a4c0>]
+不难发现，回归树的对标签的预测，实际上是一种“分区定值”的预测，建模过程的实际表
+现是对样本进行划分、然后每个区间给定一个预测值，并且树的深度越深、对样本空间的
+划分次数就越多、样本空间就会被分割成更多的子空间。在sklearn的说明文档中也有相
+关例子：
+1
+回归树的预测过程
+
+而一旦当模型已经构建完成后，回归树的预测过程其实和分类树非常类似，新数据只
+要根据划分规则分配到所属样本空间，则该空间模型的预测结果就是该数据的预测结果。
+至此，我们就在一个极简的数据集上完成了CART回归树的构建。不难发现，回归树
+和分类树的构建过程大致相同、迭代过程也基本一致，我们可以将其视作同一种建模思想
+的两种不同实现形式。
+二、CART回归树的Scikit-Learn实现方法
+1.CART回归树的sklearn快速实现
+In [26]:
+In [35]:
+In [36]:
+接下来，我们尝试在sklearn中调用回归树评估器围绕上述数据集进行建模，并对上
+述过程进行简单验证。回归树也是在tree模块下，我们可以通过如下方式进行导入：
+from sklearn.tree import DecisionTreeRegressor
+然后进行模型训练：
+clf = DecisionTreeRegressor().fit(data[:, 0].reshape(-1, 1), data[:, 1])
+# 同样可以借助tree.plot_tree进行结果的可视化呈现
+plt.figure(figsize=(6, 2), dpi=150)
+tree.plot_tree(clf)
+Out[36]:
+[Text(418.5, 188.75, 'X[0] <= 3.5\nmse = 3.76\nsamples = 5\nvalue = 3.8'),
+Text(279.0, 113.25, 'X[0] <= 1.5\nmse = 0.889\nsamples = 3\nvalue = 2.333'),
+Text(139.5, 37.75, 'mse = 0.0\nsamples = 1\nvalue = 1.0'),
+Text(418.5, 37.75, 'mse = 0.0\nsamples = 2\nvalue = 3.0'),
+Text(558.0, 113.25, 'mse = 0.0\nsamples = 2\nvalue = 6.0')]
+发现和我们手动实现过程一致。
+2.CART回归树评估器的参数解释
+接下来，详细讨论关于CART回归树评估器中的相关参数。尽管CART回归树和分类树
+是由不同评估器实现相关过程，但由于两种模型基本理论一致，因此两种不同评估器的参
+数也大都一致。
+In [25]:
+DecisionTreeRegressor?
+
+Init signature:
+DecisionTreeRegressor(
+*,
+criterion='mse',
+splitter='best',
+max_depth=None,
+min_samples_split=2,
+min_samples_leaf=1,
+min_weight_fraction_leaf=0.0,
+max_features=None,
+random_state=None,
+max_leaf_nodes=None,
+min_impurity_decrease=0.0,
+min_impurity_split=None,
+presort='deprecated',
+ccp_alpha=0.0,
+)
+Docstring:
+A decision tree regressor.
+Read more in the :ref:`User Guide <tree>`.
+Parameters
+---------
+criterion : {"mse", "friedman_mse", "mae"}, default="mse"
+The function to measure the quality of a split. Supported criteria
+are "mse" for the mean squared error, which is equal to variance
+reduction as feature selection criterion and minimizes the L2 loss
+using the mean of each terminal node, "friedman_mse", which uses mean
+squared error with Friedman's improvement score for potential splits,
+and "mae" for the mean absolute error, which minimizes the L1 loss
+using the median of each terminal node.
+.. versionadded:: 0.18
+Mean Absolute Error (MAE) criterion.
+splitter : {"best", "random"}, default="best"
+The strategy used to choose the split at each node. Supported
+strategies are "best" to choose the best split and "random" to choose
+the best random split.
+max_depth : int, default=None
+The maximum depth of the tree. If None, then nodes are expanded until
+all leaves are pure or until all leaves contain less than
+min_samples_split samples.
+min_samples_split : int or float, default=2
+The minimum number of samples required to split an internal node:
+- If int, then consider `min_samples_split` as the minimum number.
+- If float, then `min_samples_split` is a fraction and
+`ceil(min_samples_split * n_samples)` are the minimum
+number of samples for each split.
+.. versionchanged:: 0.18
+Added float values for fractions.
+min_samples_leaf : int or float, default=1
+The minimum number of samples required to be at a leaf node.
+A split point at any depth will only be considered if it leaves at
+
+least ``min_samples_leaf`` training samples in each of the left and
+right branches. This may have the effect of smoothing the model,
+especially in regression.
+- If int, then consider `min_samples_leaf` as the minimum number.
+- If float, then `min_samples_leaf` is a fraction and
+`ceil(min_samples_leaf * n_samples)` are the minimum
+number of samples for each node.
+.. versionchanged:: 0.18
+Added float values for fractions.
+min_weight_fraction_leaf : float, default=0.0
+The minimum weighted fraction of the sum total of weights (of all
+the input samples) required to be at a leaf node. Samples have
+equal weight when sample_weight is not provided.
+max_features : int, float or {"auto", "sqrt", "log2"}, default=None
+The number of features to consider when looking for the best split:
+- If int, then consider `max_features` features at each split.
+- If float, then `max_features` is a fraction and
+`int(max_features * n_features)` features are considered at each
+split.
+- If "auto", then `max_features=n_features`.
+- If "sqrt", then `max_features=sqrt(n_features)`.
+- If "log2", then `max_features=log2(n_features)`.
+- If None, then `max_features=n_features`.
+Note: the search for a split does not stop until at least one
+valid partition of the node samples is found, even if it requires to
+effectively inspect more than ``max_features`` features.
+random_state : int, RandomState instance, default=None
+Controls the randomness of the estimator. The features are always
+randomly permuted at each split, even if ``splitter`` is set to
+``"best"``. When ``max_features < n_features``, the algorithm will
+select ``max_features`` at random at each split before finding the best
+split among them. But the best found split may vary across different
+runs, even if ``max_features=n_features``. That is the case, if the
+improvement of the criterion is identical for several splits and one
+split has to be selected at random. To obtain a deterministic behaviour
+during fitting, ``random_state`` has to be fixed to an integer.
+See :term:`Glossary <random_state>` for details.
+max_leaf_nodes : int, default=None
+Grow a tree with ``max_leaf_nodes`` in best-first fashion.
+Best nodes are defined as relative reduction in impurity.
+If None then unlimited number of leaf nodes.
+min_impurity_decrease : float, default=0.0
+A node will be split if this split induces a decrease of the impurity
+greater than or equal to this value.
+The weighted impurity decrease equation is the following::
+N_t / N * (impurity - N_t_R / N_t * right_impurity
+- N_t_L / N_t * left_impurity)
+where ``N`` is the total number of samples, ``N_t`` is the number of
+
+samples at the current node, ``N_t_L`` is the number of samples in the
+left child, and ``N_t_R`` is the number of samples in the right child.
+``N``, ``N_t``, ``N_t_R`` and ``N_t_L`` all refer to the weighted sum,
+if ``sample_weight`` is passed.
+.. versionadded:: 0.19
+min_impurity_split : float, (default=0)
+Threshold for early stopping in tree growth. A node will split
+if its impurity is above the threshold, otherwise it is a leaf.
+.. deprecated:: 0.19
+``min_impurity_split`` has been deprecated in favor of
+``min_impurity_decrease`` in 0.19. The default value of
+``min_impurity_split`` has changed from 1e-7 to 0 in 0.23 and it
+will be removed in 0.25. Use ``min_impurity_decrease`` instead.
+presort : deprecated, default='deprecated'
+This parameter is deprecated and will be removed in v0.24.
+.. deprecated:: 0.22
+ccp_alpha : non-negative float, default=0.0
+Complexity parameter used for Minimal Cost-Complexity Pruning. The
+subtree with the largest cost complexity that is smaller than
+``ccp_alpha`` will be chosen. By default, no pruning is performed. See
+:ref:`minimal_cost_complexity_pruning` for details.
+.. versionadded:: 0.22
+Attributes
+---------
+feature_importances_ : ndarray of shape (n_features,)
+The feature importances.
+The higher, the more important the feature.
+The importance of a feature is computed as the
+(normalized) total reduction of the criterion brought
+by that feature. It is also known as the Gini importance [4]_.
+Warning: impurity-based feature importances can be misleading for
+high cardinality features (many unique values). See
+:func:`sklearn.inspection.permutation_importance` as an alternative.
+max_features_ : int
+The inferred value of max_features.
+n_features_ : int
+The number of features when ``fit`` is performed.
+n_outputs_ : int
+The number of outputs when ``fit`` is performed.
+tree_ : Tree
+The underlying Tree object. Please refer to
+``help(sklearn.tree._tree.Tree)`` for attributes of Tree object and
+:ref:`sphx_glr_auto_examples_tree_plot_unveil_tree_structure.py`
+for basic usage of these attributes.
+See Also
+
+-------
+DecisionTreeClassifier : A decision tree classifier.
+Notes
+----
+The default values for the parameters controlling the size of the trees
+(e.g. ``max_depth``, ``min_samples_leaf``, etc.) lead to fully grown and
+unpruned trees which can potentially be very large on some data sets. To
+reduce memory consumption, the complexity and size of the trees should be
+controlled by setting those parameter values.
+References
+---------
+.. [1] https://en.wikipedia.org/wiki/Decision_tree_learning
+.. [2] L. Breiman, J. Friedman, R. Olshen, and C. Stone, "Classification
+and Regression Trees", Wadsworth, Belmont, CA, 1984.
+.. [3] T. Hastie, R. Tibshirani and J. Friedman. "Elements of Statistical
+Learning", Springer, 2009.
+.. [4] L. Breiman, and A. Cutler, "Random Forests",
+https://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm
+Examples
+-------
+>>> from sklearn.datasets import load_diabetes
+>>> from sklearn.model_selection import cross_val_score
+>>> from sklearn.tree import DecisionTreeRegressor
+>>> X, y = load_diabetes(return_X_y=True)
+>>> regressor = DecisionTreeRegressor(random_state=0)
+>>> cross_val_score(regressor, X, y, cv=10)
+...
+# doctest: +SKIP
+...
+array([-0.39..., -0.46..., 0.02..., 0.06..., -0.50...,
+0.16..., 0.11..., -0.73..., -0.30..., -0.00...])
+File:
+s.py
+Type:
+Subclasses:
+~/opt/anaconda3/lib/python3.8/site-packages/sklearn/tree/_classe
+ABCMeta
+ExtraTreeRegressor
+不难发现，其中大多数参数我们在Lesson 8.2中都进行了详细的讲解，此处重点讲解
+criterion参数取值。criterion是备选划分规则的选取指标，对于CART分类树来说默认基
+尼系数、可选信息熵，而对于CART回归树来说默认mse，同时可选mae和
+friedman_mse，同时在新版sklearn中，还加入了poisson作为可选参数取值。接下来我
+们就这几个参数不同取值进行介绍：
+criterion='mse'情况
+当criterion取值为mse时当然是计算误差平方和再除以样本总数，其基本计算流程与
+上述手动实现过程层类似。但有一点可能会对阅读源码的同学造成困扰，那就是在源码中
+子节点整体的MSE计算公式描述如下：
+1
+
+尽管上述公式看起来像是子节点的整体MSE就等于左右两个节点的方差只和，但实际上是
+经过加权之后的方差只和。我们可以通过在手动实现过程中灵活调整
+min_impurity_decrease参数来进行验证。
+需要注意的是，CART回归树的子节点整体MSE的计算方式是加权求和还是
+简单求和，不同的材料中有不同的描述，例如由Aurélien Géron等人所著
+《机器学习实战，基于Scikit-Learn、Keras和TensorFlow》一书中表示是
+通过加权求和方式算得，而在《统计学习方法》一书中则表示是根据子节点
+的MSE直接求和得到。
+criterion='mae'情况
+和MSE不同，MAE实际上计算的是预测值和真实值的差值的绝对值再除以样本总数，
+即可以通过如下公式计算得出：
+MAE =
+1
+m
+m
+∑
+i=1
+|(yi − ^yi)|
+也就是说，MSE是基于预测值和真实值之间的欧式距离进行的计算，而MAE则是基于二者
+的街道距离进行的计算，很多时候，MSE也被称为L2损失，而MAE则被称为L1损失。
+需要注意的是，当criterion取值为mae时，为了让每一次划分时子集内的MAE值最
+小，此时每个子集的模型预测值就不再是均值，而是中位数。此时中位数的选取其实和
+Lesson 7中介绍的K-Means快速聚类的质心选取过程类似，当距离衡量方法改为街道距
+离时，能够让组内误差平方和最小的质心其实就是这一组数的中位数。
+再次强调，CART回归树的criterion不仅是划分方式挑选时的评估标准，同
+时也是划分子数据集后选取预测值的决定因素。也就是说，对于回归树来
+说，criterion的取值其实决定了两个方面，其一是决定了损失值的计算方
+式、其二是决定了每一个数据集的预测值的计算方式——数据集的预测值
+要求criterion取值最小，如果criterion=mse，则数据集的预测值要求在当
+前数据情况下mse取值最小，此时应该以数据集的标签的均值作为预测值；
+而如果criterion=mse，则数据集的预测值要求在当前数据情况下mae取值
+最小，此时应该以数据集标签的座位数作为预测值。
+并且一般来说，如果希望模型对极端值（非常大或者非常小的值，也被称为离群值）
+的忍耐程度比较高，整体建模过程不受极端值影响，可以考虑使用mae参数（就类似于中
+位数会更少的受到极端值的影响），此时模型一般不会为极端值单独设置规则。而如果希
+望模型具备较好的识别极端值的能力，则可以考虑使用mse参数，此时模型会更大程度受
+到极端值影响（就类似于均值更容易受到极端值影响），更大概率会围绕极端值单独设置
+规则，从而帮助建模者对极端值进行识别。
+
+为什么需要用模型来识别离群点？主要是因为对于高维空间中的样本点，我
+们很难通过简单的大小比较将离群点挑选出来。
+criterion='friedman_mse'情况
+friedman_mse是一种基于mse的改进型指标，是由GBDT（梯度提升树，一种集成算
+法）的提出者friedman所设计的一种残差计算方法，是sklearn中树梯度提树默认的
+criterion取值，对于单独的树决策树模型一般不推荐使用，关于friedman_mse的计算方
+法我们将在集成算法中进行详细介绍。
+

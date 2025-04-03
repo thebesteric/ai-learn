@@ -151,6 +151,7 @@ for event in events:
 snapshot = graph.get_state(config)
 print(snapshot.next) # ('tools',)，看到它在工具节点处停止了
 
+# 模拟人类请求
 human_response = (
     "我们建议你查看 LangGraph 来构建你的代理，它简单、自主代理更加可靠且可扩展。"
 )
