@@ -13,9 +13,6 @@ llm = ChatOpenAI(model='qwen2.5:7b', temperature=0.3, base_url="http://127.0.0.1
 
 # 项目目录
 PROJECT_DIRECTORY_PATH = Path("./graphrag_test")
-# 创建目录
-PROJECT_DIRECTORY_PATH.mkdir(parents=True, exist_ok=True)
-
 # 生产 GraphRagConfig 对象
 graphrag_config = load_config(PROJECT_DIRECTORY_PATH)
 # print(graphrag_config)
