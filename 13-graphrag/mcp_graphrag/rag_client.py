@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from mcp import StdioServerParameters, stdio_client, ClientSession
 from openai import OpenAI
 from langchain_openai import ChatOpenAI
+from past.types import oldstr
 from pydantic import SecretStr
 
 load_dotenv()
@@ -22,6 +23,7 @@ os.environ["BASE_URL"] = "http://127.0.0.1:8000/v1"
 os.environ["MODEL_NAME"] = "/home/ubuntu/llm/models/Qwen/Qwen2.5-7B-Instruct-identity"
 os.environ["API_KEY"] = "none"
 
+
 class MCPClient:
     def __init__(self):
         """初始化 MCP 客户端"""
@@ -32,6 +34,44 @@ class MCPClient:
         self.model_name = os.getenv("MODEL_NAME")
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         # self.client = ChatOpenAI(api_key=SecretStr(self.api_key), base_url=self.base_url, model=self.model_name)
+
+    async def transfrom_json(self, json_data) -> []:
+        """
+        将 Claude Function calling 参数格式转换为 OpenAI Function calling 参数格式，多余的字段会被删除
+        :param json_data: 一个可被解释为列表的 Python 对象（或已解析的 JSON 数据）
+        :return: 转换后的新列表
+        """
+        result = []
+        for item in json_data:
+            # 确保有 "type" 和 "function" 两个字段
+            if not isinstance(item, dict) or "type" not in item or "function" not in item:
+                continue
+            old_func = item["function"]
+            # 确保 function 下有我们需要的关键字段
+            if not isinstance(old_func, dict) or "name" not in old_func or "description" not in old_func:
+                continue
+            # 处理 function 字段
+            new_func = {
+                "name": old_func["name"],
+                "description": old_func["description"],
+                "parameters": {}
+            }
+            # 读取 input_schema 字段，并转成 parameters 字段
+            if "input_schema" in old_func and isinstance(old_func["input_schema"], dict):
+                old_schema = old_func["input_schema"]
+                # 新的 parameters 保留 type, properties, required 这三个字段
+                new_func["parameters"]["type"] = old_schema.get("type", "object")
+                new_func["properties"]["properties"] = old_schema.get("properties", {})
+                new_func["parameters"]["required"] = old_schema.get("required", [])
+
+            new_item = {
+                "type": item["type"],
+                "function": new_func
+            }
+
+            result.append(new_item)
+
+        return result
 
     async def connect_to_server(self, server_script_path: str):
         """连接到 MCP 服务器，并列出可用工具"""
@@ -90,7 +130,10 @@ class MCPClient:
                 tools=available_tools,
                 temperature=0.3,
             )
+
+            # 处理返回的内容
             content = response.choices[0]
+            # 是一个需要调用函数的消息
             if content.finish_reason == "tool_calls":
                 tool_call = content.message.tool_calls[0]
                 tool_name = tool_call.function.name
