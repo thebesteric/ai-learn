@@ -1,5 +1,6 @@
 import json
 
+import pymysql
 import requests
 
 
@@ -63,6 +64,39 @@ def python_inter(python_code):
             return json.dumps("代码执行成功", ensure_ascii=False)
 
 
+def sql_inter(sql_query):
+    """
+    查询本地 MySQL 数据库，通过运行一段 SQL 代码来进行数据库查询
+    :param sql_query: 字符串形式的 SQL 查询语句，用于执行 MySQL 中的 school 数据库中各张表进行查询，并获取表中的各类相关信息
+    :return: sql_query 的执行结果
+    """
+    connection = pymysql.connect(host='127.0.0.1',
+                                 user='root',
+                                 password='root',
+                                 database='school',
+                                 charset='utf8mb4')
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(sql_query)
+            results = cursor.fetchall()
+    finally:
+        connection.close()
+
+    return json.dumps(results, ensure_ascii=False)
+
+
+def write_file(filename, content):
+    """
+    将指定内容写入本地文件
+    :param filename: 必要参数，字符串类型，用于表示需要写入文件的文件名
+    :param content: 必要参数，字符串类型，用于表示需要写入文件的具体内容
+    :return: 是否写入成功
+    """
+    with open(filename, "w") as file:
+        file.write(content)
+    return "已经成功写入本地文件"
+
+
 tools_dict = {
     get_weather.__name__: {
         "type": "function",
@@ -95,6 +129,44 @@ tools_dict = {
                     }
                 },
                 "required": ["python_code"]
+            }
+        }
+    },
+    sql_inter.__name__: {
+        "type": "function",
+        "function": {
+            "name": "sql_inter",
+            "description": "查询本地 MySQL 数据库，通过运行一段 SQL 代码来进行数据库查询",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "sql_query": {
+                        "type": "string",
+                        "description": "字符串形式的 SQL 查询语句，用于执行 MySQL 中的 school 数据库中各张表进行查询，并获取表中的各类相关信息"
+                    }
+                },
+                "required": ["sql_query"]
+            }
+        }
+    },
+    write_file.__name__: {
+        "type": "function",
+        "function": {
+            "name": "write_file",
+            "description": "将指定内容写入本地文件",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "filename": {
+                        "type": "string",
+                        "description": "文件名"
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "需要写入文件的具体内容"
+                    }
+                },
+                "required": ["content"]
             }
         }
     }
