@@ -35,14 +35,14 @@ class MCPClient:
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         # self.client = ChatOpenAI(api_key=SecretStr(self.api_key), base_url=self.base_url, model=self.model_name)
 
-    async def transfrom_json(self, json_data) -> []:
+    async def transfrom_json(self, json2_data) -> []:
         """
         将 Claude Function calling 参数格式转换为 OpenAI Function calling 参数格式，多余的字段会被删除
-        :param json_data: 一个可被解释为列表的 Python 对象（或已解析的 JSON 数据）
+        :param json2_data: 一个可被解释为列表的 Python 对象（或已解析的 JSON 数据）
         :return: 转换后的新列表
         """
         result = []
-        for item in json_data:
+        for item in json2_data:
             # 确保有 "type" 和 "function" 两个字段
             if not isinstance(item, dict) or "type" not in item or "function" not in item:
                 continue
@@ -61,7 +61,7 @@ class MCPClient:
                 old_schema = old_func["input_schema"]
                 # 新的 parameters 保留 type, properties, required 这三个字段
                 new_func["parameters"]["type"] = old_schema.get("type", "object")
-                new_func["properties"]["properties"] = old_schema.get("properties", {})
+                new_func["parameters"]["properties"] = old_schema.get("properties", {})
                 new_func["parameters"]["required"] = old_schema.get("required", [])
 
             new_item = {

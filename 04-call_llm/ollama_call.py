@@ -25,11 +25,16 @@ Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessa
 
 # 记录历史信息
 chat_history = []
+print("欢迎使用多轮对话，\"/q\" 退出，\"/new\" 新建聊天")
 while True:
-    user_input = input("请输入您的问题（/q 退出）：")
+    user_input = input("请输入您的问题：")
     if user_input == "/q":
         print("退出对话")
         break
+    if user_input == "/new":
+        chat_history = []
+        print("历史信息已清空")
+        continue
     # 增加历史信息
     chat_history.append({"role": "user", "content": user_input})
     try:
