@@ -17,7 +17,7 @@ load_dotenv()
 class MCPClient:
     def __init__(self):
         """初始化 MCP 客户端"""
-        self.session = Optional[ClientSession] = None
+        self.session = Optional[ClientSession]
         self.exit_stack = AsyncExitStack()
         self.api_key = os.getenv("API_KEY")
         self.base_url = os.getenv("BASE_URL")

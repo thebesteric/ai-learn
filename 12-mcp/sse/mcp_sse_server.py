@@ -136,7 +136,7 @@ if __name__ == "__main__":
     parser.add_argument('--port', type=int, default=18080, help='Port to listen on')
     args = parser.parse_args()
 
-    # Bind SSE request handling to MCP server
+    # Bind SSE request handlin+++++3g to MCP server
     starlette_app = create_starlette_app(mcp_server, debug=True)
 
     uvicorn.run(starlette_app, host=args.host, port=args.port)
