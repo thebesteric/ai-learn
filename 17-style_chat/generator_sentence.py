@@ -15,8 +15,8 @@ import numpy as np
 """
 # 初始化模型
 client = ZhipuAI(api_key="替换为你的API")  # 替换为你的API Key
-# 加载Embeddingmodel
-style_model = SentenceTransformer(r"D:\PycharmProjects\test_20250328\embedding_model\thomas\text2vec-base-chinese")
+# 加载 Embedding model
+style_model = SentenceTransformer(r"/Users/wangweijun/LLM/models/text2vec-base-chinese")
 
 # ===============================
 # 1. 风格模板配置（修正消息格式）
@@ -33,7 +33,7 @@ style_config = {
         "temperature": 0.3
     },
     "毒舌": {
-        "system_prompt": "你是一个喜欢用犀利吐槽表达关心的朋友，需满足：\n1. 使用网络流行语（如'栓Q''退退退'）\n2. 包含夸张比喻（'你这速度堪比树懒'）\n3. 结尾隐藏关心",
+        "system_prompt": "你是一个喜欢用犀利吐槽表达关心的朋友，需满足：\n1. 使用网络流行语（如'栓Q、退退退、好家伙'等词）\n2. 包含夸张比喻（'你这速度堪比树懒'）\n3. 结尾隐藏关心",
         "examples": [
             {"role": "user", "content": "又胖了5斤！"},
             {"role": "assistant", "content": "好家伙！你这是要把体重秤压成分子料理？🏋️"},
@@ -60,15 +60,30 @@ def generate_style_data(style_name, num_samples=50):
     ]
 
     # 用户输入库（可自定义扩展）
-    user_inputs = [
-        "今天心情不太好", "推荐个电影吧", "怎么才能早睡早起",
-        "养猫好还是养狗好", "工作压力好大", "最近总是失眠"
-    ]
+    # user_inputs = [
+    #     "今天心情不太好", "推荐个电影吧", "怎么才能早睡早起",
+    #     "养猫好还是养狗好", "工作压力好大", "最近总是失眠"
+    # ]
 
+    user_inputs = []
+    with open("cleaned_output.txt", "r", encoding="utf-8") as f:
+        for line in f:
+            cleaned_line = line.rstrip("\n")
+            if cleaned_line:
+                user_inputs.append(cleaned_line)
+
+    if not user_inputs:
+        raise ValueError("用户输入库为空，请检查数据源。")
+
+    current_index = 0
     for _ in range(num_samples):
         try:
-            # 随机选择用户输入
-            user_msg = random.choice(user_inputs)
+            # # 随机选择用户输入
+            # user_msg = random.choice(user_inputs)
+
+            # 按顺序读取用户输入
+            user_msg = user_inputs[current_index]
+            current_index = (current_index + 1) % len(user_inputs)
 
             # 添加当前用户消息
             current_messages = messages + [
@@ -114,8 +129,8 @@ def is_valid_reply(style, user_msg, reply):
 
     # 规则2：风格关键词检查
     style_keywords = {
-        "温柔": ["呢", "呀", "😊", "🌸"],
-        "毒舌": ["好家伙", "栓Q", "!", "🏋️"]
+        "温柔": ["呢", "呀", "啦", "😊", "🌸"],
+        "毒舌": ["退退退", "好家伙", "栓Q", "!", "🏋️"]
     }
     if not any(kw in reply for kw in style_keywords.get(style, [])):
         return False
@@ -140,11 +155,11 @@ if __name__ == '__main__':
 
     try:
         print("开始生成温柔风格数据...")
-        gentle_data = generate_style_data("温柔", 50)
+        gentle_data = generate_style_data("温柔", 1000)
         all_data.extend(gentle_data)
 
         print("开始生成毒舌风格数据...")
-        sarcastic_data = generate_style_data("毒舌", 50)
+        sarcastic_data = generate_style_data("毒舌", 1000)
         all_data.extend(sarcastic_data)
 
     except KeyboardInterrupt:
