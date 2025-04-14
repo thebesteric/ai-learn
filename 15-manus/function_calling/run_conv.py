@@ -8,15 +8,18 @@ from functions import get_weather, python_inter, tools_dict, sql_inter, write_fi
 def call_tools(client, model, tool_call_messages, user_messages, tools, available_tools):
     # 多工具调用
     for tool_call_message in tool_call_messages:
-        # 模型调用了工具
-        print(f"🔧 调用了工具：{tool_call_message.function.name}")
-
         # 获取函数名
         function_name = tool_call_message.function.name
         # 获取函数参数
         function_args = json.loads(tool_call_message.function.arguments)
         # 获取函数对象
         function_to_call = available_tools[function_name]
+
+        # 模型调用了工具
+        print("\n>>>>>>>>>> 🔧 工具调用 🔧 >>>>>>>>>>")
+        print(f"Function name：{tool_call_message.function.name}")
+        print(f"Function args：{tool_call_message.function.arguments}")
+        print("<<<<<<<<<< 🔧 工具调用 🔧 <<<<<<<<<<\n")
 
         # 将函数参数输入到函数中，获取函数返回值
         try:

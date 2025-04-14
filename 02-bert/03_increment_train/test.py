@@ -9,8 +9,8 @@ from MyData import MyDataset
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("device: ", DEVICE)
 
-DATASET_PATH = r"/Users/wangweijun/LLM/datasets/lansinuote/ChnSentiCorp"
-MODEL_PATH = r"/Users/wangweijun/LLM/models/bert-base-chinese/models--bert-base-chinese/snapshots/c30a6ed22ab4564dc1e3b2ecbf6e766b0611a33f"
+DATASET_PATH = r"/Users/wangweijun/LLM/datasets/ChnSentiCorp"
+MODEL_PATH = r"/Users/wangweijun/LLM/models/bert-base-chinese/snapshots/c30a6ed22ab4564dc1e3b2ecbf6e766b0611a33f"
 
 # 加载分词器
 tokenizer = BertTokenizer.from_pretrained(MODEL_PATH)
