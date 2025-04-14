@@ -3,6 +3,8 @@ import whisper
 
 # https://github.com/openai/whisper
 
+# pip install -U openai-whisper
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("device: ", device)
 
