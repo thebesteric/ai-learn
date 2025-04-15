@@ -98,7 +98,6 @@ if __name__ == '__main__':
     loss_fn = torch.nn.CrossEntropyLoss()
 
     # 开始训练
-
     for epoch in range(EPOCHS):
         for i, (input_ids, attention_mask, token_type_ids, label) in enumerate(train_loader):
             # 将数据加载到 DEVICE 上

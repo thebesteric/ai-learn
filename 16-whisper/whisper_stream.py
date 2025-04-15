@@ -7,6 +7,8 @@ import sounddevice as sd
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("device: ", device)
+is_fp16 = True if torch.cuda.is_available() else False
+print("is_fp16: ", is_fp16)
 
 model_path = "/Users/wangweijun/LLM/models/openai/whisper-large-v3-turbo"
 
@@ -19,7 +21,7 @@ model.eval()
 # 定义流式解码函数
 def stream_decode(audio_buffer, sample_rate=16000):
     audio_tensor = torch.tensor(audio_buffer).float()
-    result = model.transcribe(audio_tensor, fp16=False, language="zh", initial_prompt="这是一段独白内容。")
+    result = model.transcribe(audio_tensor, fp16=is_fp16, language="zh", initial_prompt="这是一段独白内容。")
     return result['text']
 
 
