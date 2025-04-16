@@ -15,7 +15,7 @@ def download_model_from_modelscope(model_id, cache_dir="/Users/wangweijun/LLM/mo
     # 如果 cache_dir 目录存在，则不会进行下载
     model_dir = snapshot_download(model_id=model_id, cache_dir=cache_dir)
     # 打印下载后模型所在的本地目录
-    print(f"model_dir: {model_dir}")
+    print(f"模型下载成功: {model_dir}")
 
 if __name__ == '__main__':
     download_model_from_modelscope("iic/SenseVoiceSmall")
