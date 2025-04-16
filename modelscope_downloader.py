@@ -18,4 +18,4 @@ def download_model_from_modelscope(model_id, cache_dir="/Users/wangweijun/LLM/mo
     print(f"model_dir: {model_dir}")
 
 if __name__ == '__main__':
-    download_model_from_modelscope("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+    download_model_from_modelscope("iic/SenseVoiceSmall")
