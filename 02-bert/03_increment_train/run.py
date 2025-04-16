@@ -60,7 +60,7 @@ def collate_fn(text):
 def test():
     # 加载模型训练参数
     model.load_state_dict(torch.load("params/4.pth"))
-    # 开启测试模型
+    # 开启评估模型
     model.eval()
 
     while True:
