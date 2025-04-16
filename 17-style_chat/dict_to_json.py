@@ -10,14 +10,16 @@ original_qwen_chat = dict(
     STOP_WORDS=["<|im_end|>", "<|endoftext|>"],
 )
 
+
 def convert_template(template):
     coverted = {}
     for key, value in template.items():
-       if isinstance(value, str):
-           coverted[key] = re.sub(r"\{(\w+)\}", r"{{ \1 }}", value)
-       else:
-           coverted[key] = value
+        if isinstance(value, str):
+            coverted[key] = re.sub(r"\{(\w+)\}", r"{{ \1 }}", value)
+        else:
+            coverted[key] = value
     return coverted
+
 
 # 执行转换
 jinja2_qwen_chat = convert_template(original_qwen_chat)

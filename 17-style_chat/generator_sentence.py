@@ -165,6 +165,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("\n用户中断，保存已生成数据...")
     finally:
-        with open("style_chat_data.json", "w", encoding="utf-8") as f:
+        with open("raw_style_chat_data.json", "w", encoding="utf-8") as f:
             json.dump(all_data, f, ensure_ascii=False, indent=2)
         print(f"数据已保存，有效样本数：{len(all_data)}")

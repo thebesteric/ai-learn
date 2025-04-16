@@ -18,7 +18,7 @@ def convert_format(source_data):
 
 
 # 从文件读取源数据
-with open("style_chat_data.json", "r", encoding="utf-8") as f:
+with open("raw_style_chat_data.json", "r", encoding="utf-8") as f:
     source_data = json.load(f)
 
 # 执行转换
