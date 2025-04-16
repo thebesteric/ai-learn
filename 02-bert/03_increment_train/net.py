@@ -10,8 +10,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("device: ", DEVICE)
 
 # 加载预训练模型，模型位置一定要指定到含有 config.json 的目录
-cache_dir = r"/Users/wangweijun/LLM/models/bert-base-chinese"
-model_path = f"{cache_dir}/models--bert-base-chinese/snapshots/c30a6ed22ab4564dc1e3b2ecbf6e766b0611a33f"
+model_path = r"/Users/wangweijun/LLM/models/bert-base-chinese/snapshots/c30a6ed22ab4564dc1e3b2ecbf6e766b0611a33f"
 bert_pretrained_model = BertModel.from_pretrained(model_path).to(DEVICE)
 print(bert_pretrained_model)
 """
