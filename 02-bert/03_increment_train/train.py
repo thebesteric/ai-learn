@@ -130,10 +130,10 @@ if __name__ == '__main__':
                 accuracy = (out == label).sum().item() / len(label)
 
                 datatime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                print(f"{datatime}: epoch: {epoch + 1}, i: {i}, loss: {loss}, acc: {accuracy}")
+                print(f"[{datatime}] epoch: {epoch + 1}, i: {i}, loss: {loss}, acc: {accuracy}")
 
         # 每训练一轮，保存一次参数
         if (epoch + 1) % 10 == 0:
             # 每训练一轮，保存一次参数
-            torch.save(model.state_dict(), f"params/{epoch}.pth")
+            torch.save(model.state_dict(), f"params/{epoch + 1}.pth")
             print(f"epoch: {epoch + 1}, 参数保存成功")
