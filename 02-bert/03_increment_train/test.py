@@ -57,8 +57,9 @@ def collate_fn(data):
 
     return input_ids, attention_mask, token_type_ids, label
 
+
 # 创建数据集
-test_dataset = MyDataset(DATASET_PATH, "test")
+test_dataset = MyDataset("disk", DATASET_PATH, "test")
 test_loader = DataLoader(
     # 指定数据集
     dataset=test_dataset,
@@ -109,7 +110,6 @@ if __name__ == '__main__':
         # 计算总个数
         total += len(label)
         # 打印每批正确个数
-        print(f"第 {i+1} 批次，正确个数: {(out == label).sum().item()}")
-
+        print(f"第 {i + 1} 批次，正确个数: {(out == label).sum().item()}")
 
     print(f"最终平均精度为 acc: {acc / total}")

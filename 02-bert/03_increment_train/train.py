@@ -69,7 +69,8 @@ def collate_fn(data):
 
 
 # 创建数据集
-train_dataset = MyDataset(DATASET_PATH, "train")
+train_dataset = MyDataset("disk", DATASET_PATH, "train")
+print("数据集大小：", len(train_dataset))
 train_loader = DataLoader(
     # 指定数据集
     dataset=train_dataset,
@@ -129,8 +130,10 @@ if __name__ == '__main__':
                 accuracy = (out == label).sum().item() / len(label)
 
                 datatime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                print(f"{datatime}: epoch: {epoch}, i: {i}, loss: {loss}, acc: {accuracy}")
+                print(f"{datatime}: epoch: {epoch + 1}, i: {i}, loss: {loss}, acc: {accuracy}")
 
         # 每训练一轮，保存一次参数
-        torch.save(model.state_dict(), f"params/{epoch}.pth")
-        print(f"epoch: {epoch}, 参数保存成功")
+        if (epoch + 1) % 10 == 0:
+            # 每训练一轮，保存一次参数
+            torch.save(model.state_dict(), f"params/{epoch}.pth")
+            print(f"epoch: {epoch + 1}, 参数保存成功")

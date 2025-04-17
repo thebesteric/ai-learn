@@ -1,0 +1,15 @@
+{
+  "meta_instruction": "You are a helpful assistant.",
+  "capability": "chat",
+  "eosys": "<|im_end|>\n",
+  "eoh": "<|im_end|>\n",
+  "system": "<|im_start|>system\n{{ system }}<|im_end|>\n",
+  "user": "<|im_start|>user\n{{ input }}<|im_end|>",
+  "assistant": "<|im_start|>assistant\n",
+  "eoa": "<|im_end|>",
+  "separator": "\n",
+  "stop_words": [
+    "<|im_end|>",
+    "<|endoftext|>"
+  ]
+}

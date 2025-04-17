@@ -11,7 +11,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.ba
 print("DEVICE: ", DEVICE)
 
 # 定义模型路径
-model_dir = "/Users/wangweijun/LLM/models/Qwen/Qwen2___5-0___5B-Instruct"
+model_dir = "/Users/wangweijun/LLM/models/Qwen/Qwen2.5-0.5B-Instruct"
 
 # torch_dtype 设置为 auto，模型会自动选择合适的数据类型，否则需要参考 config.json 的 "torch_dtype": "bfloat16",
 # trust_remote_code=True 是否信任从远程仓库下载并执行的自定义代码

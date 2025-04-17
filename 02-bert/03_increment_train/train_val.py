@@ -69,7 +69,7 @@ def collate_fn(data):
 
 
 # 创建训练数据集
-train_dataset = MyDataset(DATASET_PATH, "train")
+train_dataset = MyDataset("disk", DATASET_PATH, "train")
 train_loader = DataLoader(
     # 指定数据集
     dataset=train_dataset,
@@ -87,7 +87,7 @@ train_loader = DataLoader(
 )
 
 # 创建验证数据集
-val_dataset = MyDataset(DATASET_PATH, "validation")
+val_dataset = MyDataset("disk", DATASET_PATH, "validation")
 val_loader = DataLoader(
     # 指定数据集
     dataset=train_dataset,
