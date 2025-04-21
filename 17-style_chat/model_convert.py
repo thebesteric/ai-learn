@@ -52,12 +52,12 @@ def convert_sentence_with_pooling_and_normalize(model_path, new_path):
     print(f"完整的 sentence 模型转换完成: {new_path}")
 
 
-model_path = r"/Users/wangweijun/LLM/models/text2vec-base-chinese"
+model_path = r"/Users/wangweijun/LLM/models/paraphrase-multilingual-MiniLM-L12-v2"
 # 添加 normalize 归一化层
-# convert_sentence_with_pooling_and_normalize(model_path, model_path)
+convert_sentence_with_pooling_and_normalize(model_path, model_path)
 
 # 加载修复后的模型
-model = SentenceTransformer(r"/Users/wangweijun/LLM/models/text2vec-base-chinese")
+model = SentenceTransformer(r"/Users/wangweijun/LLM/models/paraphrase-multilingual-MiniLM-L12-v2")
 
 # 验证向量归一化
 text = "测试文本"

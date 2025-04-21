@@ -18,7 +18,7 @@ embed_model = HuggingFaceEmbedding(model_name=embed_model_name)
 Settings.embed_model = embed_model
 
 # 2、使用 HuggingFaceLLM 加载本地大模型
-model_name = "/Users/wangweijun/LLM/models/Qwen/Qwen2___5-0___5B-Instruct"
+model_name = "/Users/wangweijun/LLM/models/Qwen/Qwen2.5-0.5B-Instruct"
 llm = HuggingFaceLLM(
     model_name=model_name,
     tokenizer_name=model_name,

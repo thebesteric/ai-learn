@@ -6,7 +6,7 @@ https://docs.llamaindex.ai/en/stable/examples/llm/huggingface/
 pip install llama-index-llms-huggingface
 """
 
-model_name = "/Users/wangweijun/LLM/models/Qwen/Qwen2___5-0___5B-Instruct"
+model_name = "/Users/wangweijun/LLM/models/Qwen/Qwen2.5-0.5B-Instruct"
 
 # 使用 HuggingFaceLLM 加载本地大模型
 llm = HuggingFaceLLM(

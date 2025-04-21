@@ -60,6 +60,7 @@ def collate_fn(data):
 
 # 创建数据集
 test_dataset = MyDataset("disk", DATASET_PATH, "test")
+print("数据集大小：", len(test_dataset))
 test_loader = DataLoader(
     # 指定数据集
     dataset=test_dataset,
