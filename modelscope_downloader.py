@@ -18,4 +18,4 @@ def download_model_from_modelscope(model_id, cache_dir="/Users/wangweijun/LLM/mo
     print(f"模型下载成功: {model_dir}")
 
 if __name__ == '__main__':
-    download_model_from_modelscope("iic/SenseVoiceSmall")
+    download_model_from_modelscope("iic/speech_sambert-hifigan_tts_zh-cn_16k")
