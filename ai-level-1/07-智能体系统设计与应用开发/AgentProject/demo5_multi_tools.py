@@ -1,5 +1,5 @@
 from langchain import hub
-from langchain.agents import create_openai_functions_agent, AgentExecutor
+from langchain.agents import create_openai_functions_agent, AgentExecutor, create_tool_calling_agent
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import Tool
@@ -52,7 +52,8 @@ llm = ChatOpenAI(
 )
 
 # 构建OpenAI函数代理
-agent = create_openai_functions_agent(llm, tools, prompt)
+# agent = create_openai_functions_agent(llm, tools, prompt)
+agent = create_tool_calling_agent(llm, tools, prompt)
 
 # 通过传入代理和工具创建代理执行器
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
