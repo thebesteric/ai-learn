@@ -1,5 +1,4 @@
 import chromadb
-from chromadb.errors import InvalidCollectionException
 from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex, StorageContext, load_index_from_storage, ServiceContext
 from llama_index.core.node_parser import SimpleNodeParser
 from llama_index.llms.huggingface import HuggingFaceLLM
@@ -48,7 +47,7 @@ try:
     # 获取已经存在的向量数据库
     chroma_collection = chroma_client.get_collection("quickstart")
     print("集合获取完毕", chroma_collection)
-except InvalidCollectionException:
+except Exception:
     # 如果集合不存在，则创建新的集合，默认会在同级目录下创建一个 chroma 目录，来存储向量
     chroma_collection = chroma_client.create_collection("quickstart")
     print("集合创建完毕", chroma_collection)

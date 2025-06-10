@@ -2,10 +2,12 @@ import time
 from datetime import datetime
 
 import torch
+from torch.optim import AdamW
+
 from MyData import MyDataset
 from torch.utils.data import DataLoader
 from net import Model
-from transformers import BertTokenizer, AdamW
+from transformers import BertTokenizer
 
 """
 训练模型

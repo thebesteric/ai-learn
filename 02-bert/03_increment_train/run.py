@@ -1,7 +1,7 @@
 import torch
 from net import Model
 from torch.utils.data import DataLoader
-from transformers import BertTokenizer, AdamW
+from transformers import BertTokenizer
 from MyData import MyDataset
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
