@@ -140,11 +140,12 @@ async def main():
     """主函数"""
     if len(sys.argv) < 2:
         print("Usage: uv run client.py <path_to_server_script>")
-        sys.exit(1)
+        # sys.exit(1)
 
     client = MCPClient()
     try:
-        await client.connect_to_server(sys.argv[1])
+        # await client.connect_to_server(sys.argv[1])
+        await client.connect_to_server("mcp_server.py")
         await client.chat_loop()
     finally:
         await client.cleanup()

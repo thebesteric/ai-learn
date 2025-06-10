@@ -128,17 +128,18 @@ class MCPClient:
 async def main():
     if len(sys.argv) < 2:
         print("Usage: uv run client.py <URL of SSE MCP server (i.e. http://localhost:18080/sse)>")
-        sys.exit(1)
+        # sys.exit(1)
 
     client = MCPClient()
     try:
-        await client.connect_to_server(server_url=sys.argv[1])
+        # await client.connect_to_server(server_url=sys.argv[1])
+        await client.connect_to_server(server_url="http://localhost:18080/sse")
         await client.chat_loop()
     finally:
         await client.cleanup()
 
 
 if __name__ == "__main__":
-    # python mcp_client.py http://localhost:18080/sse
-    # uv run mcp_client.py http://localhost:18080/sse
+    # python mcp_sse_client.py http://localhost:18080/sse
+    # uv run mcp_sse_client.py http://localhost:18080/sse
     asyncio.run(main())
