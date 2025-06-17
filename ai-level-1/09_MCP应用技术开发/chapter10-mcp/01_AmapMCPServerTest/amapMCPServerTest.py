@@ -34,8 +34,13 @@ async def run():
                 # print(f"Supported capabilities:{capabilities.capabilities}/n/n")
 
                 # 请求服务器列出所有支持的
-                # tools = await session.list_tools()
+                tools = await session.list_tools()
                 # print(f"Supported tools:{tools}/n/n")
+                for tool in tools.tools:
+                    print(f"Tool name: {tool.name}")
+                    print(f"Tool description: {tool.description}")
+                    print(f"Tool input schema: {tool.inputSchema}")
+                    print("\n\n")
                 # with open("output.txt", 'w', encoding='utf-8') as file:
                 #     file.write(str(tools))
 
@@ -57,10 +62,10 @@ async def run():
                 # print(f"maps_ip_location:{maps_ip_location.content[0].text}\n\n")
 
                 # 4、根据城市名称或者标准adcode查询指定城市的天气
-                maps_weather = await session.call_tool("maps_weather", arguments={"city":"合肥"})
-                # maps_weather = await session.call_tool("maps_weather", arguments={"city":"310000"})
-                print(f"maps_weather:{maps_weather}")
-                print(f"maps_weather:{maps_weather.content[0].text}\n\n")
+                # maps_weather = await session.call_tool("maps_weather", arguments={"city":"合肥"})
+                # # maps_weather = await session.call_tool("maps_weather", arguments={"city":"310000"})
+                # print(f"maps_weather:{maps_weather}")
+                # print(f"maps_weather:{maps_weather.content[0].text}\n\n")
 
                 # 5、骑行路径规划用于规划骑行通勤方案，规划时会考虑天桥、单行线、封路等情况。最大支持 500km 的骑行路线规划
                 # 苏州虎丘区到相城区
