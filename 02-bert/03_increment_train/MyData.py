@@ -10,21 +10,15 @@ from datasets import load_from_disk, load_dataset
 class MyDataset(Dataset):
     # 初始化数据集
     def __init__(self, load_from="disk", dataset_path=None, split="train"):
+        if split not in ["train", "test", "validation"]:
+            raise ValueError("split 参数错误，只能为 train、test、validation")
         # 加载数据集
         if load_from == "csv":
-            # 从 CSV 加载数据集
+            # 从 CSV 加载数据集，这里的 split 参数固定为 "train"
             self.dataset = load_dataset("csv", data_files=dataset_path + f"/{split}.csv", split="train")
         else:
             # 从磁盘加载数据集
-            self.dataset = load_from_disk(dataset_path)
-            if split == "train":
-                self.dataset = self.dataset["train"]
-            elif split == "test":
-                self.dataset = self.dataset["test"]
-            elif split == "validation":
-                self.dataset = self.dataset["validation"]
-            else:
-                raise ValueError("split 参数错误，只能为 train、test、validation")
+            self.dataset = load_from_disk(dataset_path)[split]
 
     # 返回数据集长度
     def __len__(self):
@@ -38,10 +32,10 @@ class MyDataset(Dataset):
 
 
 if __name__ == '__main__':
-    dataset_path = "/Users/wangweijun/LLM/datasets/lansinuote/ChnSentiCorp"
+    dataset_path = "/Users/wangweijun/llm/datasets/ChnSentiCorp"
     datasets = MyDataset("disk", dataset_path, "test")
 
-    # dataset_path = "/Users/wangweijun/LLM/datasets/lansinuote/ChnSentiCorp/csv_files"
+    # dataset_path = "/Users/wangweijun/llm/datasets/ChnSentiCorp/csv_files"
     # datasets = MyDataset("csv", dataset_path, "test")
 
     # 1200

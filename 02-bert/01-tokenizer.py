@@ -5,26 +5,26 @@ AI 模型是如何处理字符数据的？
 """
 
 # 加载字典和分词器
-model_path = r"/Users/wangweijun/LLM/models/bert-base-chinese/models--bert-base-chinese/snapshots/c30a6ed22ab4564dc1e3b2ecbf6e766b0611a33f"
+model_path = r"/Users/wangweijun/llm/models/bert-base-chinese/snapshots/c30a6ed22ab4564dc1e3b2ecbf6e766b0611a33f"
 tokenizer = BertTokenizer.from_pretrained(model_path)
 print(tokenizer)
 
 """
-unk_token（[UNK]）：代表未知标记（Unknown token）。当模型碰到不在词汇表中的词时，就会用[UNK]来替代。
+[UNK]（unk_token）：代表未知标记（Unknown token）。当模型碰到不在词汇表中的词时，就会用[UNK]来替代。
 输入: "I love quantum physics"
 如果 "quantum" 不在词汇表中，模型可能会将其替换为 "I love [UNK] physics"。
 
-sep_token（[SEP]）：代表分隔标记（Separator token）。一般用于分隔不同的句子，像在问答任务或者句子对任务里。
+[SEP]（sep_token）：代表分隔标记（Separator token）。一般用于分隔不同的句子，像在问答任务或者句子对任务里。
 输入: "How are you?[SEP]I am fine."
 
-pad_token（[PAD]）：代表填充标记（Padding token）。在对输入序列进行填充时会用到，目的是让所有输入序列长度一致。
+[PAD]（pad_token）：代表填充标记（Padding token）。在对输入序列进行填充时会用到，目的是让所有输入序列长度一致。
 输入: "Hello world"
 填充后: "Hello world[PAD][PAD][PAD]"
 
-cls_token（[CLS]）：代表分类标记（Classification token）。一般放在输入序列的开头，用于分类任务，模型会利用这个标记的输出做分类决策。
+[CLS]（cls_token）：代表分类标记（Classification token）。一般放在输入序列的开头，用于分类任务，模型会利用这个标记的输出做分类决策。
 输入: "[CLS]I love machine learning[SEP]"
 
-mask_token（[MASK]）：代表掩码标记（Mask token）。在掩码语言模型（Masked Language Model, MLM）任务中使用，用来遮蔽部分输入词，让模型预测被遮蔽的词。
+[MASK]（mask_token）：代表掩码标记（Mask token）。在掩码语言模型（Masked Language Model, MLM）任务中使用，用来遮蔽部分输入词，让模型预测被遮蔽的词。
 输入: "I love [MASK] learning"
 模型预测: "I love machine learning"
 """
@@ -55,7 +55,7 @@ encode = tokenizer.batch_encode_plus(
     batch_text_or_text_pairs=sentence,
     # 是否加入特殊字符
     add_special_tokens=True,
-    # 表示编码后的最大长度，它的上限是 tokenizer_config.json 中的 model_max_length 的值
+    # 表示编码后的最大长度，它的上限是 tokenizer_config.json 中的 model_max_length 的值，这里重新制定了上限，超过的就截断
     max_length=12,
     # 是否切断文本，以适应文本最大的输入长度，即：长了就截断
     truncation=True,
@@ -68,8 +68,11 @@ encode = tokenizer.batch_encode_plus(
     # np：返回 Numpy 的数组 ndarray
     # None：返回 Python 的列表 list
     return_tensors=None,
+    # 返回注意力掩码，即：标识哪些位置是有意义的，有意义的是 1，填充的是 0
     return_attention_mask=True,
+    # 返回 input_ids
     return_token_type_ids=True,
+    # 返回特殊符号
     return_special_tokens_mask=True,
     # 返回编码后的序列长度
     return_length=True,
@@ -84,5 +87,6 @@ for k, v in encode.items():
 
 print("=" * 50, "我是分隔符", "=" * 50)
 
+# 解码 input_ids 为文本
 print(tokenizer.decode(encode.get("input_ids")[0]))
 print(tokenizer.decode(encode.get("input_ids")[1]))

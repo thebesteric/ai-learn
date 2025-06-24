@@ -7,7 +7,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 """
 
 # 模型路径
-model_dir = r"/Users/wangweijun/LLM/models/uer/gpt2-chinese-cluecorpussmall/models--uer--gpt2-chinese-cluecorpussmall/snapshots/c2c0249d8a2731f269414cc3b22dff021f8e07a3"
+model_dir = r"/Users/wangweijun/llm/models/gpt2-chinese-cluecorpussmall/snapshots/c2c0249d8a2731f269414cc3b22dff021f8e07a3"
 
 # 加载模型和分词器（纯离线加载）
 model = AutoModelForCausalLM.from_pretrained(model_dir)

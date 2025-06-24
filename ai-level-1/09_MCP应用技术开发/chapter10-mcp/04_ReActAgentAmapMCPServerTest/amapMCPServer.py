@@ -1,14 +1,18 @@
 import os
 import asyncio
+
+from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt import create_react_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain.chat_models import init_chat_model
 from typing import Dict, List, Any
 
+from pydantic import SecretStr
+
 # 获取高德地图 API Key
-AMAP_MAPS_API_KEY=os.getenv('AMAP_MAPS_API_KEY')
+AMAP_MAPS_API_KEY = os.getenv('AMAP_MAPS_API_KEY')
 
 # 使用 langgraph 推荐方式定义大模型
 llm = init_chat_model(
@@ -17,6 +21,7 @@ llm = init_chat_model(
     model_provider="deepseek",
 )
 
+# llm = ChatOpenAI(model="qwen3:8b", api_key=SecretStr("none"), base_url="http://localhost:11434/v1", streaming=True)
 
 # 解析消息列表
 def parse_messages(messages: List[Any]) -> None:
@@ -102,10 +107,11 @@ def save_graph_visualization(graph, filename: str = "graph.png") -> None:
 # 定义并运行agent
 async def run_agent():
     # 实例化MCP Server客户端
+    # https://lbs.amap.com/api/mcp-server/summary
     client = MultiServerMCPClient({
         # 高德地图MCP Server
         "amap-amap-sse": {
-            "url": "https://mcp.amap.com/sse?key="+AMAP_MAPS_API_KEY,
+            "url": "https://mcp.amap.com/sse?key=" + AMAP_MAPS_API_KEY,
             "transport": "sse",
         }
     })
@@ -141,7 +147,7 @@ async def run_agent():
     # agent_response = await agent.ainvoke({"messages": [HumanMessage(content="这个114.05571,22.52245经纬度对应的地方是哪里")]}, config)
     # # agent_response = await agent.ainvoke({"messages": [HumanMessage(content="深圳红树林的经纬度坐标是多少")]}, config)
     # # agent_response = await agent.ainvoke({"messages": [HumanMessage(content="112.10.22.229这个IP所在位置")]}, config)
-    # # agent_response = await agent.ainvoke({"messages": [HumanMessage(content="深圳的天气如何")]}, config)
+    # agent_response = await agent.ainvoke({"messages": [HumanMessage(content="深圳的天气如何")]}, config)
     # # agent_response = await agent.ainvoke({"messages": [HumanMessage(content="我要从深圳市南山区中兴大厦骑行到宝安区宝安体育馆，帮我规划下路径")]}, config)
     # # agent_response = await agent.ainvoke({"messages": [HumanMessage(content="我要从深圳市南山区中兴大厦步行到宝安区宝安体育馆，帮我规划下路径")]}, config)
     # # agent_response = await agent.ainvoke({"messages": [HumanMessage(content="我要从深圳市南山区中兴大厦驾车到宝安区宝安体育馆，帮我规划下路径")]}, config)
@@ -155,10 +161,10 @@ async def run_agent():
     # agent_response_content = agent_response["messages"][-1].content
     # print(f"agent_response:{agent_response_content}")
 
-
     # 2、流式处理查询
     async for message_chunk, metadata in agent.astream(
-            input={"messages": [HumanMessage(content="深圳的天气如何?")]},
+            input={"messages": [HumanMessage(content="合肥的天气如何?")]},
+            # input={"messages": [HumanMessage(content="我要从合肥高新区软件园到南京鸡鸣寺，帮我规划下驾车路径?")]},
             config=config,
             stream_mode="messages"
     ):
@@ -167,17 +173,24 @@ async def run_agent():
         # print(f"Metadata:{metadata}\n\n")
 
         # 跳过工具输出
-        if metadata["langgraph_node"]=="tools":
+        if metadata["langgraph_node"] == "tools":
+            print(f"调用了工具：{message_chunk.name}")
             continue
 
         # 输出最终结果
         if message_chunk.content:
             print(message_chunk.content, end="", flush=True)
 
+    # async for event in agent.astream(
+    #         input={"messages": [HumanMessage(content="合肥的天气如何?")]},
+    #         # input={"messages": [HumanMessage(content="我要从合肥高新区软件园到南京鸡鸣寺，帮我规划下驾车路径?")]},
+    #         config=config,
+    #         stream_mode="updates"
+    # ):
+    #     for value in event.values():
+    #         print(value)
+    #         print("========")
+
 
 if __name__ == "__main__":
     asyncio.run(run_agent())
-
-
-
-

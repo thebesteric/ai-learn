@@ -7,6 +7,7 @@ aiosignal==1.3.2
 aiosqlite==0.21.0
 altair==5.5.0
 annotated-types==0.7.0
+anthropic==0.55.0
 anyio==4.9.0
 anytree==2.13.0
 appnope @ file:///Users/builder/cbouss/perseverance-python-buildout/croot/appnope_1699303798458/work
@@ -34,6 +35,8 @@ bleach @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_faq
 blinker==1.9.0
 blis==1.2.1
 Brotli @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_f7i0oxypt6/croot/brotli-split_1736182464088/work
+browser-use==0.3.2
+bubus==1.1.2
 build==1.2.2.post1
 cachetools==5.5.2
 catalogue==2.0.10
@@ -54,6 +57,7 @@ cryptography==45.0.4
 cssselect==1.3.0
 cycler==0.12.1
 cymem==2.0.11
+Cython==3.1.2
 dashscope==1.22.2
 dataclasses-json==0.6.7
 datasets==3.6.0
@@ -88,6 +92,8 @@ future==1.0.0
 gensim==4.3.3
 gitdb==4.0.12
 GitPython==3.1.44
+google-ai-generativelanguage==0.6.18
+google-api-core==2.25.1
 google-auth==2.40.3
 googleapis-common-protos==1.70.0
 graphrag==2.3.0
@@ -96,6 +102,7 @@ graspologic-native==1.2.5
 greenlet==3.2.3
 griffe==1.7.3
 grpcio==1.73.0
+grpcio-status==1.73.0
 h11 @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_557zp2ij9k/croot/h11_1748442489221/work
 h2==4.2.0
 hf-xet==1.1.3
@@ -140,9 +147,14 @@ kiwisolver==1.4.8
 kubernetes==33.1.0
 lancedb==0.17.0
 langchain==0.3.25
+langchain-anthropic==0.3.15
 langchain-community==0.3.24
 langchain-core==0.3.64
+langchain-deepseek==0.1.3
+langchain-google-genai==2.1.5
 langchain-huggingface==0.2.0
+langchain-mcp-adapters==0.1.7
+langchain-ollama==0.3.3
 langchain-openai==0.3.21
 langchain-text-splitters==0.3.8
 langcodes==3.5.0
@@ -177,6 +189,7 @@ matplotlib==3.10.3
 matplotlib-inline @ file:///Users/builder/cbouss/perseverance-python-buildout/croot/matplotlib-inline_1699242375920/work
 mcp==1.9.3
 mdurl==0.1.2
+mem0ai==0.1.111
 mistune @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_5be80wp982/croot/mistune_1741123981908/work
 mmh3==5.1.0
 modelscope==1.26.0
@@ -187,6 +200,7 @@ multidict==6.4.4
 multiprocess==0.70.16
 murmurhash==1.0.13
 mypy_extensions==1.1.0
+mysql-connector-python==9.3.0
 narwhals==1.42.0
 nbclient @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_67j3qubf1d/croot/nbclient_1741124021022/work
 nbconvert @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_e4p9a3fnm6/croot/nbconvert-meta_1741184656667/work
@@ -200,6 +214,7 @@ notebook_shim @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/
 numba==0.61.2
 numpy==1.26.4
 oauthlib==3.2.2
+ollama==0.5.1
 onnxruntime==1.22.0
 openai==1.85.0
 openapi-pydantic==0.5.1
@@ -222,6 +237,7 @@ packaging @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_
 pandas==2.2.3
 pandocfilters @ file:///opt/conda/conda-bld/pandocfilters_1643405455980/work
 parso @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_8824a1w4md/croot/parso_1733963320105/work
+patchright==1.52.5
 patsy==1.0.1
 pdfminer.six==20250327
 pdfplumber==0.11.6
@@ -236,8 +252,9 @@ preshed==3.0.10
 prometheus_client @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_26twdnhgbr/croot/prometheus_client_1744271763065/work
 prompt-toolkit @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_c63v4kqjzr/croot/prompt-toolkit_1704404354115/work
 propcache==0.3.2
-protobuf==5.29.5
-psutil @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_10oa1k8l11/croot/psutil_1736367646006/work
+proto-plus==1.26.1
+protobuf==6.31.1
+psutil==7.0.0
 ptyprocess @ file:///tmp/build/80754af9/ptyprocess_1609355006118/work/dist/ptyprocess-0.7.0-py2.py3-none-any.whl
 pure-eval @ file:///opt/conda/conda-bld/pure_eval_1646925070566/work
 pyarrow==20.0.0
@@ -254,9 +271,12 @@ PyJWT==2.8.0
 pylance==0.20.0
 PyMySQL==1.1.1
 pynndescent==0.5.13
+pyobjc-core==11.1
+pyobjc-framework-Cocoa==11.1
 pyparsing==3.2.3
 pypdf==5.6.0
 pypdfium2==4.30.1
+pyperclip==1.9.0
 PyPika==0.48.9
 pyproject_hooks==1.2.0
 PySocks @ file:///Users/builder/cbouss/perseverance-python-buildout/croot/pysocks_1699237568675/work
@@ -282,6 +302,7 @@ rsa==4.9.1
 safetensors==0.5.3
 scikit-learn==1.7.0
 scipy==1.12.0
+screeninfo==0.8.1
 seaborn==0.13.2
 selenium==4.33.0
 Send2Trash @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_a6shz7yg5h/croot/send2trash_1736541353497/work
@@ -334,6 +355,7 @@ typing_extensions==4.13.2
 tzdata==2025.2
 umap-learn==0.5.7
 urllib3 @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_8dwi5l2dj0/croot/urllib3_1737133640453/work
+uuid7==0.1.0
 uvicorn==0.34.3
 uvloop==0.21.0
 wasabi==1.1.3
