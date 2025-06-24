@@ -13,8 +13,8 @@ llm = ChatDeepSeek(base_url=os.getenv("DEEPSEEK_BASE_URL"), model='deepseek-chat
 
 task = """
 1. 访问：https://passport.ctrip.com/user/login?BackUrl=https%3A%2F%2Fwww.ctrip.com%2F#ctm_ref=c_ph_login_buttom
-2. 填写用户名：13966660426
-3. 填写密码：P@ssw0rd
+2. 填写用户名：xxx
+3. 填写密码：xxx
 4. 勾选：阅读并同意携程的服务协议和个人信息保护政策
 5. 点击：登录按钮
 6. 如果出现验证码弹窗，则点击：获取验证码，并等待用户输入验证码后继续
