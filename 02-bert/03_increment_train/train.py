@@ -11,6 +11,7 @@ from transformers import BertTokenizer
 
 """
 训练模型
+同时在训练的过程中进行验证，保存最优权重
 """
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
