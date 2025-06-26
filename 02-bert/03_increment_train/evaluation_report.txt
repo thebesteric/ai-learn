@@ -1,0 +1,26 @@
+模型评估报告
+==================================================
+准确率 (Accuracy): 0.8817
+
+宏平均指标 (Macro-average):
+  精确率 (Precision): 0.8823
+  召回率 (Recall): 0.8814
+  F1分数 (F1 Score): 0.8815
+
+加权平均指标 (Weighted-average):
+  精确率 (Precision): 0.8821
+  召回率 (Recall): 0.8817
+  F1分数 (F1 Score): 0.8816
+
+分类报告 (Classification Report):
+              precision    recall  f1-score   support
+
+           0     0.8947    0.8615    0.8778       592
+           1     0.8698    0.9013    0.8853       608
+
+    accuracy                         0.8817      1200
+   macro avg     0.8823    0.8814    0.8815      1200
+weighted avg     0.8821    0.8817    0.8816      1200
+
+
+混淆矩阵 (Confusion Matrix):
