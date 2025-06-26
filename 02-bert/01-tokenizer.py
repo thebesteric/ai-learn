@@ -9,6 +9,15 @@ model_path = r"/Users/wangweijun/llm/models/bert-base-chinese/snapshots/c30a6ed2
 tokenizer = BertTokenizer.from_pretrained(model_path)
 print(tokenizer)
 
+# BertTokenizer(name_or_path='/Users/wangweijun/llm/models/bert-base-chinese/snapshots/c30a6ed22ab4564dc1e3b2ecbf6e766b0611a33f', vocab_size=21128, model_max_length=512, is_fast=False, padding_side='right', truncation_side='right', special_tokens={'unk_token': '[UNK]', 'sep_token': '[SEP]', 'pad_token': '[PAD]', 'cls_token': '[CLS]', 'mask_token': '[MASK]'}, clean_up_tokenization_spaces=True, added_tokens_decoder={
+# 	0: AddedToken("[PAD]", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+# 	100: AddedToken("[UNK]", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+# 	101: AddedToken("[CLS]", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+# 	102: AddedToken("[SEP]", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+# 	103: AddedToken("[MASK]", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+# }
+# )
+
 """
 [UNK]（unk_token）：代表未知标记（Unknown token）。当模型碰到不在词汇表中的词时，就会用[UNK]来替代。
 输入: "I love quantum physics"
@@ -85,8 +94,14 @@ encode = tokenizer.batch_encode_plus(
 for k, v in encode.items():
     print(k, ":", v)
 
+# input_ids : [[101, 4635, 3189, 898, 2255, 2226, 8024, 102, 0, 0, 0, 0], [101, 791, 1921, 2769, 4638, 2552, 2658, 4294, 1166, 1962, 102, 0]]
+# token_type_ids : [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+# special_tokens_mask : [[1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]]
+# length : [8, 11]
+# attention_mask : [[1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]]
+
 print("=" * 50, "我是分隔符", "=" * 50)
 
 # 解码 input_ids 为文本
-print(tokenizer.decode(encode.get("input_ids")[0]))
-print(tokenizer.decode(encode.get("input_ids")[1]))
+print(tokenizer.decode(encode.get("input_ids")[0])) # [CLS] 白 日 依 山 尽 ， [SEP] [PAD] [PAD] [PAD] [PAD]
+print(tokenizer.decode(encode.get("input_ids")[1])) # [CLS] 今 天 我 的 心 情 特 别 好 [SEP] [PAD]

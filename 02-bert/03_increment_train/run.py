@@ -7,13 +7,13 @@ from MyData import MyDataset
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("device: ", DEVICE)
 
-MODEL_PATH = r"/Users/wangweijun/LLM/models/bert-base-chinese/snapshots/c30a6ed22ab4564dc1e3b2ecbf6e766b0611a33f"
+MODEL_PATH = r"/Users/wangweijun/llm/models/bert-base-chinese/snapshots/c30a6ed22ab4564dc1e3b2ecbf6e766b0611a33f"
 
 # 加载分词器
 tokenizer = BertTokenizer.from_pretrained(MODEL_PATH)
 
 # 实例化模型
-model = Model().to(DEVICE)
+model = Model(768, 2).to(DEVICE)
 # 评价结果，要和模型输出的维度保持一致
 results = ['负向评价', '正向评价']
 

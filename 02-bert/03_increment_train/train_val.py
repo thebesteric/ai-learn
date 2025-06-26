@@ -21,8 +21,8 @@ print("device: ", DEVICE)
 # 因为不知道什么时候能训练完全，先给大一点，因为中途需要监控，可以手动停止训练
 EPOCHS = 30000
 
-DATASET_PATH = r"/Users/wangweijun/LLM/datasets/ChnSentiCorp"
-MODEL_PATH = r"/Users/wangweijun/LLM/models/bert-base-chinese/snapshots/c30a6ed22ab4564dc1e3b2ecbf6e766b0611a33f"
+DATASET_PATH = r"/Users/wangweijun/llm/datasets/ChnSentiCorp"
+MODEL_PATH = r"/Users/wangweijun/llm/models/bert-base-chinese/snapshots/c30a6ed22ab4564dc1e3b2ecbf6e766b0611a33f"
 
 # 加载分词器
 tokenizer = BertTokenizer.from_pretrained(MODEL_PATH)
@@ -30,12 +30,14 @@ tokenizer = BertTokenizer.from_pretrained(MODEL_PATH)
 
 # 将传入的字符串进行编码
 def collate_fn(data):
-    sentence = [i[0] for i in data]
-    label = [i[1] for i in data]
+    # 语句
+    sentences = [item[0] for item in data]
+    # 标签
+    labels = [item[1] for item in data]
     # 编码
     data = tokenizer.batch_encode_plus(
         # 要编码的文本数据
-        batch_text_or_text_pairs=sentence,
+        batch_text_or_text_pairs=sentences,
         # 是否加入特殊字符
         add_special_tokens=True,
         # 表示编码后的最大长度，它的上限是 tokenizer_config.json 中的 model_max_length 的值
@@ -51,8 +53,11 @@ def collate_fn(data):
         # np：返回 Numpy 的数组 ndarray
         # None：返回 Python 的列表 list
         return_tensors="pt",
+        # 返回 attentions_mask
         return_attention_mask=True,
+        # 返回 token_type_ids
         return_token_type_ids=True,
+        # 返回 special_tokens
         return_special_tokens_mask=True,
         # 返回编码后的序列长度
         return_length=True,
@@ -65,13 +70,14 @@ def collate_fn(data):
     # token_type_ids：第一个句子和特殊符号的位置是 0，第二个句子的位置是 1，只针对上下文的编码
     token_type_ids = data["token_type_ids"]
     # 标签，转换为张量
-    label = torch.LongTensor(label)
+    label = torch.LongTensor(labels)
 
     return input_ids, attention_mask, token_type_ids, label
 
 
 # 创建训练数据集
 train_dataset = MyDataset("disk", DATASET_PATH, "train")
+print(f"训练集数据：{len(train_dataset)}")
 train_loader = DataLoader(
     # 指定数据集
     dataset=train_dataset,
@@ -90,6 +96,7 @@ train_loader = DataLoader(
 
 # 创建验证数据集
 val_dataset = MyDataset("disk", DATASET_PATH, "validation")
+print(f"验证集数据：{len(val_dataset)}")
 val_loader = DataLoader(
     # 指定数据集
     dataset=train_dataset,
@@ -108,8 +115,7 @@ val_loader = DataLoader(
 
 if __name__ == '__main__':
     # 开始训练
-    print(DEVICE)
-    model = Model().to(DEVICE)
+    model = Model(768, 2).to(DEVICE)
     # 定义优化器
     optimizer = AdamW(model.parameters())
     # 定义损失函数
@@ -122,6 +128,7 @@ if __name__ == '__main__':
 
     # 开始训练
     for epoch in range(EPOCHS):
+        # 加载训练集
         for i, (input_ids, attention_mask, token_type_ids, label) in enumerate(train_loader):
             # 将数据加载到 DEVICE 上
             input_ids = input_ids.to(DEVICE)
@@ -161,6 +168,7 @@ if __name__ == '__main__':
         with torch.no_grad():
             val_acc = 0.0
             val_loss = 0.0
+            # 加载验证集
             for i, (input_ids, attention_mask, token_type_ids, label) in enumerate(val_loader):
                 # 将数据加载到 DEVICE 上
                 input_ids = input_ids.to(DEVICE)
@@ -170,10 +178,17 @@ if __name__ == '__main__':
                 # 前向计算；将数据输入模型，得到输出
                 out = model(input_ids, attention_mask, token_type_ids)
                 # 根据输出，计算损失，就是计算两者的误差
-                val_loss = loss_fn(out, label)
+                loss = loss_fn(out, label)
+                val_loss += loss
                 # 根据输出计算验证的精度
                 out = out.argmax(dim=1)
-                val_acc += (out == label).sum().item() / len(label)
+                acc = (out == label).sum().item() / len(label)
+                val_acc += acc
+
+                # 每隔 5 个批次，输出验证信息
+                if i % 5 == 0:
+                    datatime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    print(f"{datatime}: 验证集: epoch: {epoch}, i: {i}, val_loss: {loss}, val_acc: {acc}")
 
             # 计算验证的平均损失
             val_loss /= len(val_loader)
@@ -189,9 +204,9 @@ if __name__ == '__main__':
                 # 把最优的参数保存下来，就是为了方式过拟合，因为一旦过拟合是无法回退的，如果没有保存，那么只有重新训练
                 # 这就是为什么要保存最优参数的原因
                 best_val_acc = val_acc
-                torch.save(model.state_dict(), f"params/best_bert.pth")
+                torch.save(model.state_dict(), f"params/best_bert_{datatime}.pth")
                 print(f"epoch: {epoch}, 最优参数: acc = {best_val_acc}, 保存成功")
 
         # 保存最后一轮参数
-        torch.save(model.state_dict(), f"params/last_train.pth")
+        torch.save(model.state_dict(), f"params/last_train_{datatime}.pth")
         print(f"epoch: {epoch}, 最后一轮参数， 参数保存成功")

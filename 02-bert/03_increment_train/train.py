@@ -21,8 +21,8 @@ print("device: ", DEVICE)
 # 因为不知道什么时候能训练完全，先给大一点，因为中途需要监控，可以手动停止训练
 EPOCHS = 30000
 
-DATASET_PATH = r"/Users/wangweijun/LLM/datasets/ChnSentiCorp"
-MODEL_PATH = r"/Users/wangweijun/LLM/models/bert-base-chinese/snapshots/c30a6ed22ab4564dc1e3b2ecbf6e766b0611a33f"
+DATASET_PATH = r"/Users/wangweijun/llm/datasets/ChnSentiCorp"
+MODEL_PATH = r"/Users/wangweijun/llm/models/bert-base-chinese/snapshots/c30a6ed22ab4564dc1e3b2ecbf6e766b0611a33f"
 
 # 加载分词器
 tokenizer = BertTokenizer.from_pretrained(MODEL_PATH)
@@ -92,7 +92,7 @@ train_loader = DataLoader(
 if __name__ == '__main__':
     # 开始训练
     print(DEVICE)
-    model = Model().to(DEVICE)
+    model = Model(768, 2).to(DEVICE)
     # 定义优化器
     optimizer = AdamW(model.parameters())
     # 定义损失函数
