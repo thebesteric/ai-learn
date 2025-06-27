@@ -35,6 +35,7 @@ if __name__ == '__main__':
     dataset_path = "/Users/wangweijun/llm/datasets/ChnSentiCorp"
     datasets = MyDataset("disk", dataset_path, "test")
 
+    # dataset_path = "/Users/wangweijun/PycharmProjects/ai-learn/02-bert/data/Weibo"
     # dataset_path = "/Users/wangweijun/llm/datasets/ChnSentiCorp/csv_files"
     # datasets = MyDataset("csv", dataset_path, "test")
 

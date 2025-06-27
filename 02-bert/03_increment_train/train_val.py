@@ -99,7 +99,7 @@ val_dataset = MyDataset("disk", DATASET_PATH, "validation")
 print(f"验证集数据：{len(val_dataset)}")
 val_loader = DataLoader(
     # 指定数据集
-    dataset=train_dataset,
+    dataset=val_dataset,
     # 批次越大，显存占用越大，训练速度越快
     batch_size=100,
     # 打乱数据

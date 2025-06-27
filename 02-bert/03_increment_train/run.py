@@ -58,7 +58,7 @@ def collate_fn(text):
 
 def test():
     # 加载模型训练参数
-    model.load_state_dict(torch.load("params/4.pth"))
+    model.load_state_dict(torch.load("params/best_bert.pth"))
     # 开启评估模型
     model.eval()
 
@@ -66,14 +66,18 @@ def test():
         # 输入文本
         text = input("请输入测试文本（输入'q'退出）：")
         if text == 'q':
+            print("退出测试程序")
             break
+        # 编码获取到 input_ids, attention_mask, token_type_ids
         input_ids, attention_mask, token_type_ids = collate_fn(text)
+        # 将 input_ids, attention_mask, token_type_ids 加载到 DEVICE
         input_ids, attention_mask, token_type_ids = input_ids.to(DEVICE), attention_mask.to(DEVICE), token_type_ids.to(DEVICE)
 
         # 前向计算；将数据输入模型，得到输出
         with torch.no_grad():
             out = model(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
             # dim = 1 是因为 out 的形状是 [1, 2], 如：[[0], [1]]，我们只需要，[0], [1]
+            # 取出最大概率的索引
             result = torch.argmax(out, dim=1)
             print("预测结果：", results[result])
 
